@@ -4,6 +4,7 @@ rust-ansi-term
 This is a library for controlling colours and formatting, such as red
 bold text or blue underlined text, on ANSI terminals.
 
+[![Build Status](https://travis-ci.org/ogham/rust-ansi-term.svg?branch=master)](https://travis-ci.org/ogham/rust-ansi-term)
 
 Installation
 ------------
