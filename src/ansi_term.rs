@@ -3,8 +3,7 @@
 #![crate_type = "dylib"]
 #![desc = "A rust library for ANSI terminal colours and styles (bold, underline)"]
 
-#![feature(phase)]
-extern crate regex;
+#![feature(phase)] extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
 
 pub enum Colour {
@@ -139,9 +138,21 @@ impl Colour {
         Style(StyleStruct { foreground: *self, background: Some(background), bold: false, underline: false })
     }
 }
+
+pub fn strip_formatting(input: String) -> String {
+    let re = regex!("\x1B\\[.+?m");
+    re.replace_all(input.as_slice(), "").to_string()
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed};
+    use super::{Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed, Plain, strip_formatting};
+    
+    #[test]
+    fn test_plain() {
+        let hi = Plain.paint("text/plain");
+        assert!(hi == "text/plain".to_string());
+    }
     
     #[test]
     fn test_red() {
@@ -238,9 +249,16 @@ mod tests {
         let hi = Fixed(100).on(Fixed(200)).paint("hi");
         assert!(hi == "\x1B[48;5;200;38;5;100mhi\x1B[0m".to_string());
     }
-}
-
-pub fn strip_formatting(input: &String) -> String {
-    let re = regex!("\x1B\\[.+?m");
-    re.replace_all(input.as_slice(), "").to_string()
+    
+    #[test]
+    fn test_strip_formatting() {
+        let hi = strip_formatting(Blue.paint("hi"));
+        assert!(hi == "hi".to_string());
+    }
+    
+    #[test]
+    fn test_strip_formatting_2() {
+        let hi = strip_formatting(Blue.on(Fixed(230)).bold().paint("hi"));
+        assert!(hi == "hi".to_string());
+    }
 }
