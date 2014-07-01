@@ -1,0 +1,9 @@
+[package]
+
+name = "ansi_term"
+version = "0.1.0"
+authors = [ "ogham@bsago.me" ]
+
+[[lib]]
+
+name = "ansi_term"
