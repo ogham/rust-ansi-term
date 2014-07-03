@@ -81,6 +81,21 @@
 #![feature(phase)] extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
 
+trait Paint {
+    /// Paints the given text with this colour. This is a short-cut so
+    /// you don't have to use Blue.normal() just to get blue text.
+    fn paint(&self, input: &str) -> String;
+
+    /// Returns a Style with the underline property set.
+    fn underline(&self) -> Style;
+
+    /// Return a Style with the bold property set.
+    fn bold(&self) -> Style;
+
+    /// Return a Style with the background colour set.
+    fn on(&self, background: Colour) -> Style;
+}
+
 /// A colour is one specific type of ANSI escape code, and can refer
 /// to either the foreground or background colour.
 pub enum Colour {
@@ -118,6 +133,37 @@ impl Colour {
             Fixed(num) => format!("48;5;{}", num),
         }
     }
+    
+    /// Return a Style with the foreground colour set to this colour.
+    pub fn normal(&self) -> Style {
+        Style(StyleStruct { foreground: *self, background: None, bold: false, underline: false })
+    }
+}
+
+/// The Paint trait represents a style or colour that can be applied
+/// to a piece of text.
+impl Paint for Colour {
+    /// Paints the given text with this colour. This is a short-cut so
+    /// you don't have to use Blue.normal() just to get blue text.
+    fn paint(&self, input: &str) -> String {
+        let re = format!("\x1B[{}m{}\x1B[0m", self.foreground_code(), input);
+        return re.to_string();
+    }
+
+    /// Returns a Style with the underline property set.
+    fn underline(&self) -> Style {
+        Style(StyleStruct { foreground: *self, background: None, bold: false, underline: true })
+    }
+
+    /// Return a Style with the bold property set.
+    fn bold(&self) -> Style {
+        Style(StyleStruct { foreground: *self, background: None, bold: true, underline: false })
+    }
+
+    /// Return a Style with the background colour set.
+    fn on(&self, background: Colour) -> Style {
+        Style(StyleStruct { foreground: *self, background: Some(background), bold: false, underline: false })
+    }
 }
 
 /// A style is a collection of properties that can format a string
@@ -143,10 +189,10 @@ struct StyleStruct {
     underline: bool,
 }
 
-impl Style {
+impl Paint for Style {
     /// Paints the given text with this style, returning a String of
     /// text with the relevant ANSI escape codes added.
-    pub fn paint(&self, input: &str) -> String {
+    fn paint(&self, input: &str) -> String {
         match *self {
             Plain => input.to_string(),
             Foreground(c) => c.paint(input),
@@ -166,7 +212,7 @@ impl Style {
     }
 
     /// Return a Style with the bold property set.
-    pub fn bold(&self) -> Style {
+    fn bold(&self) -> Style {
         match *self {
             Plain => Style(StyleStruct         { foreground: White,         background: None,          bold: true, underline: false }),
             Foreground(c) => Style(StyleStruct { foreground: c,             background: None,          bold: true, underline: false }),
@@ -175,7 +221,7 @@ impl Style {
     }
 
     /// Return a Style with the underline property set.
-    pub fn underline(&self) -> Style {
+    fn underline(&self) -> Style {
         match *self {
             Plain => Style(StyleStruct         { foreground: White,         background: None,          bold: false,   underline: true }),
             Foreground(c) => Style(StyleStruct { foreground: c,             background: None,          bold: false,   underline: true }),
@@ -184,41 +230,12 @@ impl Style {
     }
 
     /// Return a Style with the background colour set.
-    pub fn on(&self, background: Colour) -> Style {
+    fn on(&self, background: Colour) -> Style {
         match *self {
             Plain => Style(StyleStruct         { foreground: White,         background: Some(background), bold: false,   underline: false }),
             Foreground(c) => Style(StyleStruct { foreground: c,             background: Some(background), bold: false,   underline: false }),
             Style(st) => Style(StyleStruct     { foreground: st.foreground, background: Some(background), bold: st.bold, underline: st.underline }),
         }
-    }
-}
-
-impl Colour {
-    /// Paints the given text with this colour. This is a short-cut so
-    /// you don't have to use Blue.normal() just to get blue text.
-    pub fn paint(&self, input: &str) -> String {
-        let re = format!("\x1B[{}m{}\x1B[0m", self.foreground_code(), input);
-        return re.to_string();
-    }
-
-    /// Returns a Style with the underline property set.
-    pub fn underline(&self) -> Style {
-        Style(StyleStruct { foreground: *self, background: None, bold: false, underline: true })
-    }
-
-    /// Return a Style with the bold property set.
-    pub fn bold(&self) -> Style {
-        Style(StyleStruct { foreground: *self, background: None, bold: true, underline: false })
-    }
-
-    /// Return a Style with the foreground colour set to this colour.
-    pub fn normal(&self) -> Style {
-        Style(StyleStruct { foreground: *self, background: None, bold: false, underline: false })
-    }
-
-    /// Return a Style with the background colour set.
-    pub fn on(&self, background: Colour) -> Style {
-        Style(StyleStruct { foreground: *self, background: Some(background), bold: false, underline: false })
     }
 }
 
@@ -235,7 +252,7 @@ pub fn strip_formatting(input: String) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed, Plain, strip_formatting};
+    use super::{Paint, Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed, Plain, strip_formatting};
 
     #[test]
     fn test_plain() {
