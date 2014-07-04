@@ -81,7 +81,7 @@
 #![feature(phase)] extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
 
-trait Paint {
+pub trait Paint {
     /// Paints the given text with this colour.
     fn paint(&self, input: &str) -> String;
 
