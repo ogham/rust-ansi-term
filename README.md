@@ -1,13 +1,12 @@
-rust-ansi-term
-==============
+# rust-ansi-term [![Build Status](https://travis-ci.org/ogham/rust-ansi-term.svg?branch=master)](https://travis-ci.org/ogham/rust-ansi-term)
 
 This is a library for controlling colours and formatting, such as red
 bold text or blue underlined text, on ANSI terminals.
 
-[![Build Status](https://travis-ci.org/ogham/rust-ansi-term.svg?branch=master)](https://travis-ci.org/ogham/rust-ansi-term)
+#### [View the Rustdoc](http://www.rust-ci.org/ogham/rust-ansi-term/doc/ansi_term/)
 
-Installation
-------------
+
+## Installation
 
 It uses [Cargo](http://crates.io/), Rust's package manager. You can
 depend on this library by adding this Git repository to your Cargo
@@ -20,8 +19,7 @@ git = "https://github.com/ogham/rust-ansi-term.git"
 ```
 
 
-Usage
------
+## Usage
 
 You can format strings by calling the `paint` method on a Colour or a
 Style object, passing in the string you want to format. Here are some
