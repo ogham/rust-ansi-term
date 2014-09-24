@@ -11,7 +11,13 @@ Installation
 
 It uses [Cargo](http://crates.io/), Rust's package manager. You can
 depend on this library by adding this Git repository to your Cargo
-dependencies.
+dependencies:
+
+```toml
+[dependencies.ansi_term]
+
+git = "https://github.com/ogham/rust-ansi-term.git"
+```
 
 
 Usage
