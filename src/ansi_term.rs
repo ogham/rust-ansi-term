@@ -2,6 +2,7 @@
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
 #![desc = "A rust library for ANSI terminal colours and styles (bold, underline)"]
+#![feature(struct_variant)]
 
 //! This is a library for controlling colours and formatting, such as
 //! red bold text or blue underlined text, on ANSI terminals.
@@ -135,7 +136,7 @@ impl Colour {
     
     /// Return a Style with the foreground colour set to this colour.
     pub fn normal(&self) -> Style {
-        Styled(StyleStruct { foreground: *self, background: None, bold: false, underline: false })
+        Styled { foreground: *self, background: None, bold: false, underline: false }
     }
 }
 
@@ -150,39 +151,33 @@ impl Paint for Colour {
     }
 
     fn underline(&self) -> Style {
-        Styled(StyleStruct { foreground: *self, background: None, bold: false, underline: true })
+        Styled { foreground: *self, background: None, bold: false, underline: true }
     }
 
     fn bold(&self) -> Style {
-        Styled(StyleStruct { foreground: *self, background: None, bold: true, underline: false })
+        Styled { foreground: *self, background: None, bold: true, underline: false }
     }
 
     fn on(&self, background: Colour) -> Style {
-        Styled(StyleStruct { foreground: *self, background: Some(background), bold: false, underline: false })
+        Styled { foreground: *self, background: Some(background), bold: false, underline: false }
     }
 }
 
 /// A style is a collection of properties that can format a string
 /// using ANSI escape codes.
 pub enum Style {
+
     /// The Plain style provides no formatting.
     Plain,
+
     /// The Foreground style provides just a foreground colour.
     Foreground(Colour),
-    /// The Style style is a catch-all for anything more complicated
+
+    ///
+    /// The Styled style is a catch-all for anything more complicated
     /// than that. It's technically possible for there to be other
     /// cases, such as "bold foreground", but probably isn't worth it.
-    Styled(StyleStruct),
-}
-
-// Having a struct inside an enum is currently unfinished in Rust, but
-// should be put in there when that feature is complete.
-
-struct StyleStruct {
-    foreground: Colour,
-    background: Option<Colour>,
-    bold: bool,
-    underline: bool,
+    Styled { foreground: Colour, background: Option<Colour>, bold: bool, underline: bool, },
 }
 
 impl Paint for Style {
@@ -190,42 +185,40 @@ impl Paint for Style {
         match *self {
             Plain => input.to_string(),
             Foreground(c) => c.paint(input),
-            Styled(s) => match s {
-                StyleStruct { foreground, background, bold, underline } => {
-                    let bg = match background {
-                        Some(c) => format!("{};", c.background_code()),
-                        None => "".to_string()
-                    };
-                    let bo = if bold { "1;" } else { "" };
-                    let un = if underline { "4;" } else { "" };
-                    let painted = format!("\x1B[{}{}{}{}m{}\x1B[0m", bo, un, bg, foreground.foreground_code(), input.to_string());
-                    return painted.to_string();
-                }
+            Styled(foreground, background, bold, underline) => {
+                let bg = match background {
+                    Some(c) => format!("{};", c.background_code()),
+                    None => "".to_string()
+                };
+                let bo = if bold { "1;" } else { "" };
+                let un = if underline { "4;" } else { "" };
+                let painted = format!("\x1B[{}{}{}{}m{}\x1B[0m", bo, un, bg, foreground.foreground_code(), input.to_string());
+                return painted.to_string();
             }
         }
     }
 
     fn bold(&self) -> Style {
         match *self {
-            Plain => Styled(StyleStruct         { foreground: White,         background: None,          bold: true, underline: false }),
-            Foreground(c) => Styled(StyleStruct { foreground: c,             background: None,          bold: true, underline: false }),
-            Styled(st) => Styled(StyleStruct     { foreground: st.foreground, background: st.background, bold: true, underline: st.underline }),
+            Plain =>                Styled { foreground: White,  background: None,  bold: true,  underline: false },
+            Foreground(c) =>        Styled { foreground: c,      background: None,  bold: true,  underline: false },
+            Styled(fg, bg, _, u) => Styled { foreground: fg,     background: bg,    bold: true,  underline: u },
         }
     }
 
     fn underline(&self) -> Style {
         match *self {
-            Plain => Styled(StyleStruct         { foreground: White,         background: None,          bold: false,   underline: true }),
-            Foreground(c) => Styled(StyleStruct { foreground: c,             background: None,          bold: false,   underline: true }),
-            Styled(st) => Styled(StyleStruct     { foreground: st.foreground, background: st.background, bold: st.bold, underline: true }),
+            Plain =>                Styled { foreground: White,  background: None,  bold: false,  underline: true },
+            Foreground(c) =>        Styled { foreground: c,      background: None,  bold: false,  underline: true },
+            Styled(fg, bg, b, _) => Styled { foreground: fg,     background: bg,    bold: b,      underline: true },
         }
     }
 
     fn on(&self, background: Colour) -> Style {
         match *self {
-            Plain => Styled(StyleStruct         { foreground: White,         background: Some(background), bold: false,   underline: false }),
-            Foreground(c) => Styled(StyleStruct { foreground: c,             background: Some(background), bold: false,   underline: false }),
-            Styled(st) => Styled(StyleStruct     { foreground: st.foreground, background: Some(background), bold: st.bold, underline: st.underline }),
+            Plain =>               Styled { foreground: White,  background: Some(background),  bold: false,  underline: false },
+            Foreground(c) =>       Styled { foreground: c,      background: Some(background),  bold: false,  underline: false },
+            Styled(fg, _, b, u) => Styled { foreground: fg,     background: Some(background),  bold: b,      underline: u },
         }
     }
 }
