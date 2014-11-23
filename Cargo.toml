@@ -1,9 +1,10 @@
 [package]
 
 name = "ansi_term"
-version = "0.1.0"
+version = "0.2.0"
 authors = [ "ogham@bsago.me" ]
 
-[[lib]]
+[lib]
 
 name = "ansi_term"
+doctest = false

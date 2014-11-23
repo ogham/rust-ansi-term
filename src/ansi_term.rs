@@ -2,10 +2,15 @@
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
 #![desc = "A rust library for ANSI terminal colours and styles (bold, underline)"]
-#![feature(struct_variant)]
 
 //! This is a library for controlling colours and formatting, such as
 //! red bold text or blue underlined text, on ANSI terminals.
+//!
+//! ```rust
+//! extern crate ansi_term;
+//! use ansi_term::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
+//! use ansi_term::Paint;
+//! ```
 //!
 //! Simple Colours
 //! --------------
@@ -81,6 +86,8 @@
 
 #![feature(phase)] extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
+use Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed};
+use Style::{Plain, Foreground, Styled};
 
 pub trait Paint {
     /// Paints the given text with this colour.
@@ -236,7 +243,10 @@ pub fn strip_formatting(input: String) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{Paint, Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed, Plain, strip_formatting};
+    use super::strip_formatting;
+    use super::Style::Plain;
+    use super::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed};
+    use super::Paint;
 
     #[test]
     fn test_plain() {
