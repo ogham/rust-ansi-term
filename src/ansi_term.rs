@@ -192,7 +192,7 @@ impl Paint for Style {
         match *self {
             Plain => input.to_string(),
             Foreground(c) => c.paint(input),
-            Styled(foreground, background, bold, underline) => {
+            Styled { foreground, background, bold, underline } => {
                 let bg = match background {
                     Some(c) => format!("{};", c.background_code()),
                     None => "".to_string()
@@ -207,25 +207,25 @@ impl Paint for Style {
 
     fn bold(&self) -> Style {
         match *self {
-            Plain =>                Styled { foreground: White,  background: None,  bold: true,  underline: false },
-            Foreground(c) =>        Styled { foreground: c,      background: None,  bold: true,  underline: false },
-            Styled(fg, bg, _, u) => Styled { foreground: fg,     background: bg,    bold: true,  underline: u },
+            Plain => Styled { foreground: White, background: None, bold: true, underline: false },
+            Foreground(c) => Styled { foreground: c, background: None, bold: true, underline: false },
+            Styled { foreground, background, bold: _, underline } => Styled { foreground: foreground, background: background, bold: true, underline: underline },
         }
     }
 
     fn underline(&self) -> Style {
         match *self {
-            Plain =>                Styled { foreground: White,  background: None,  bold: false,  underline: true },
-            Foreground(c) =>        Styled { foreground: c,      background: None,  bold: false,  underline: true },
-            Styled(fg, bg, b, _) => Styled { foreground: fg,     background: bg,    bold: b,      underline: true },
+            Plain => Styled { foreground: White, background: None, bold: false, underline: true },
+            Foreground(c) => Styled { foreground: c, background: None, bold: false, underline: true },
+            Styled { foreground, background, bold, underline: _ } => Styled { foreground: foreground, background: background, bold: bold, underline: true },
         }
     }
 
     fn on(&self, background: Colour) -> Style {
         match *self {
-            Plain =>               Styled { foreground: White,  background: Some(background),  bold: false,  underline: false },
-            Foreground(c) =>       Styled { foreground: c,      background: Some(background),  bold: false,  underline: false },
-            Styled(fg, _, b, u) => Styled { foreground: fg,     background: Some(background),  bold: b,      underline: u },
+            Plain => Styled { foreground: White,background: Some(background), bold: false, underline: false },
+            Foreground(c) => Styled { foreground: c, background: Some(background), bold: false, underline: false },
+            Styled { foreground, background: _, bold, underline } => Styled { foreground: foreground, background: Some(background), bold: bold, underline: underline },
         }
     }
 }
