@@ -25,6 +25,13 @@ You can format strings by calling the `paint` method on a Colour or a
 Style object, passing in the string you want to format. Here are some
 examples:
 
+```rust
+extern crate ansi_term;
+use ansi_term::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
+use ansi_term::Style::Plain;
+use ansi_term::Paint;
+```
+
 ```Rust
 fn main() {
     println!("Red text: {}", Red.paint("Red!"));
