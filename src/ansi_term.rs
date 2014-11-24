@@ -89,6 +89,7 @@
 #[phase(plugin)] extern crate regex_macros;
 use Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed};
 use Style::{Plain, Foreground, Styled};
+use std::str::SendStr;
 
 pub trait Paint {
     /// Paints the given text with this colour.
@@ -114,31 +115,31 @@ pub enum Colour {
 // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 
 impl Colour {
-    fn foreground_code(&self) -> String {
+    fn foreground_code(&self) -> SendStr {
         match *self {
-            Black => "30".to_string(),
-            Red => "31".to_string(),
-            Green => "32".to_string(),
-            Yellow => "33".to_string(),
-            Blue => "34".to_string(),
-            Purple => "35".to_string(),
-            Cyan => "36".to_string(),
-            White => "37".to_string(),
-            Fixed(num) => format!("38;5;{}", num),
+            Black  => "30".into_maybe_owned(),
+            Red    => "31".into_maybe_owned(),
+            Green  => "32".into_maybe_owned(),
+            Yellow => "33".into_maybe_owned(),
+            Blue   => "34".into_maybe_owned(),
+            Purple => "35".into_maybe_owned(),
+            Cyan   => "36".into_maybe_owned(),
+            White  => "37".into_maybe_owned(),
+            Fixed(num) => format!("38;5;{}", num).into_maybe_owned(),
         }
     }
 
-    fn background_code(&self) -> String {
+    fn background_code(&self) -> SendStr {
         match *self {
-            Black => "40".to_string(),
-            Red => "41".to_string(),
-            Green => "42".to_string(),
-            Yellow => "43".to_string(),
-            Blue => "44".to_string(),
-            Purple => "45".to_string(),
-            Cyan => "46".to_string(),
-            White => "47".to_string(),
-            Fixed(num) => format!("48;5;{}", num),
+            Black  => "40".into_maybe_owned(),
+            Red    => "41".into_maybe_owned(),
+            Green  => "42".into_maybe_owned(),
+            Yellow => "43".into_maybe_owned(),
+            Blue   => "44".into_maybe_owned(),
+            Purple => "45".into_maybe_owned(),
+            Cyan   => "46".into_maybe_owned(),
+            White  => "47".into_maybe_owned(),
+            Fixed(num) => format!("48;5;{}", num).into_maybe_owned(),
         }
     }
     
@@ -195,8 +196,8 @@ impl Paint for Style {
             Foreground(c) => c.paint(input),
             Styled { foreground, background, bold, underline } => {
                 let bg = match background {
-                    Some(c) => format!("{};", c.background_code()),
-                    None => "".to_string()
+                    Some(c) => format!("{};", c.background_code()).into_maybe_owned(),
+                    None => "".into_maybe_owned(),
                 };
                 let bo = if bold { "1;" } else { "" };
                 let un = if underline { "4;" } else { "" };
