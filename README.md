@@ -3,7 +3,7 @@
 This is a library for controlling colours and formatting, such as red
 bold text or blue underlined text, on ANSI terminals.
 
-#### [View the Rustdoc](http://www.rust-ci.org/ogham/rust-ansi-term/doc/ansi_term/)
+### [View the Rustdoc](http://www.rust-ci.org/ogham/rust-ansi-term/doc/ansi_term/)
 
 
 ## Installation
@@ -35,11 +35,8 @@ use ansi_term::Paint;
 ```Rust
 fn main() {
     println!("Red text: {}", Red.paint("Red!"));
-    println!("Red text: {}", Red.normal().paint("Red!"));  // same as above
 
     println!("Blue bold text: {}", Blue.bold().paint("Blue bold!"));
-    println!("Blue bold text: {}", Blue.normal().bold().paint("Blue bold!"));  // same as above
-
     println!("Yellow underline text: {}", Yellow.underline().paint("Yellow underline!"));
     println!("Blue on yellow text: {}", Blue.on(Yellow).paint("Blue on yellow!"));
 
@@ -50,5 +47,7 @@ fn main() {
 }
 ```
 
-Available colours are Black, Red, Yellow, Green, Blue, Purple, Cyan, White, and Fixed(n) up to 256. Available formattings are `.bold()`, `.underline()`, and `.on(colour)`.
+Available colours are Black, Red, Yellow, Green, Blue, Purple, Cyan,
+White, and Fixed(n) up to 256. Available formattings are `.bold()`,
+`.underline()`, and `.on(colour)`.
 

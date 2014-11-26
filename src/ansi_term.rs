@@ -2,6 +2,7 @@
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
 #![desc = "A rust library for ANSI terminal colours and styles (bold, underline)"]
+#![feature(macro_rules)]
 
 //! This is a library for controlling colours and formatting, such as
 //! red bold text or blue underlined text, on ANSI terminals.
@@ -10,7 +11,6 @@
 //! extern crate ansi_term;
 //! use ansi_term::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 //! use ansi_term::Style::Plain;
-//! use ansi_term::Paint;
 //! ```
 //!
 //! Simple Colours
@@ -21,15 +21,18 @@
 //! example, to get some red text, call the `paint` method on `Red`:
 //!
 //! ```rust
-//! Red.paint("Red!")
+//! println!("This is in red: {}!", Red.paint("a red string"));
 //! ```
 //!
-//! You can also call the `paint` method on a Style. To turn a Colour
-//! into a Style, use the `normal` method, though this does the exact
-//! some thing as above:
+//! The `paint` method returns an `ANSIString` object, which will get
+//! automatically converted to the correct sequence of escape codes when
+//! used in a `println!` or `format!` macro, or anything else that
+//! supports using the `Show` trait. This means that if you just want a
+//! string of the escape codes without anything else, you can still use
+//! the `to_string` method:
 //!
 //! ```rust
-//! Red.normal().paint("Still red!")
+//! let red_string: String = Red.paint("another red string").to_string();
 //! ```
 //!
 //! Bold, Underline, and Background
@@ -41,21 +44,33 @@
 //! it:
 //!
 //! ```rust
-//! Blue.bold().paint("Blue bold!")
-//! Yellow.underline().paint("Yellow underline!")
+//! println!("Demonstrating {} and {}!",
+//!          Blue.bold().paint("blue bold"),
+//!          Yellow.underline().paint("yellow underline"));
 //! ```
 //!
-//! Again, you can call these methods on Styles as well as just Colours:
+//! These methods chain, so you can call them on existing Style
+//! objects to set more than one particular properly, like so:
 //!
 //! ```rust
-//! Blue.normal().bold().paint("Still blue bold!")
+//! Blue.underline().bold().paint("Blue underline bold!")
 //! ```
 //!
-//! Finally, you can set the background colour of a Style by using the
-//! `on` method:
+//! You can set the background colour of a Style by using the `on`
+//! method:
 //!
 //! ```rust
 //! Blue.on(Yellow).paint("Blue on yellow!")
+//! ```
+//!
+//! Finally, you can turn a Colour into a Style with the `normal`
+//! method, though it'll produce the exact same string if you just use
+//! the Colour. It's only useful if you're writing a method that can
+//! return either normal or bold (or underline) styles, and need to
+//! return a Style object from it.
+//!
+//! ```rust
+//! Red.normal().paint("yet another red string")
 //! ```
 //!
 //! Extended Colours
@@ -89,57 +104,102 @@
 #[phase(plugin)] extern crate regex_macros;
 use Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed};
 use Style::{Plain, Foreground, Styled};
-use std::str::SendStr;
+use std::fmt;
 
-pub trait Paint {
-    /// Paints the given text with this colour.
-    fn paint(&self, input: &str) -> String;
+/// An ANSI String is a string coupled with the Style to display it
+/// in a terminal.
+/// 
+/// Although not technically a string itself, it can be turned into
+/// one with the `to_string` method.
+pub struct ANSIString<'a> {
+    string: &'a str,
+    style: Style,
+}
 
-    /// Returns a Style with the underline property set.
-    fn underline(&self) -> Style;
+impl<'a> ANSIString<'a> {
+    /// Creates a new ANSI String with the given contents and style.
+    pub fn new(contents: &'a str, style: Style) -> ANSIString<'a> {
+        ANSIString { string: contents, style: style }
+    }
+}
 
-    /// Return a Style with the bold property set.
-    fn bold(&self) -> Style;
-
-    /// Return a Style with the background colour set.
-    fn on(&self, background: Colour) -> Style;
+impl<'a> fmt::Show for ANSIString<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.style {
+            Plain => write!(f, "{}", self.string),
+            Foreground(colour) => {
+                try!(f.write(b"\x1B["));
+                try!(colour.write_foreground_code(f));
+                write!(f, "m{}\x1B[0m", self.string)
+            },
+            Styled { foreground, background, bold, underline } => {
+                try!(f.write(b"\x1B["));
+                
+                if bold {
+                    try!(f.write(b"1;"));
+                }
+                
+                if underline {
+                    try!(f.write(b"4;"));
+                }
+                
+                match background {
+                    Some(c) => {
+                        try!(c.write_background_code(f));
+                        try!(f.write(b";"));
+                    },
+                    None => {},
+                }
+                
+                try!(foreground.write_foreground_code(f));
+                
+                write!(f, "m{}\x1B[0m", self.string)
+            }
+        }
+    }
 }
 
 /// A colour is one specific type of ANSI escape code, and can refer
 /// to either the foreground or background colour.
+///
+/// These use the standard numeric sequences.
+/// See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 pub enum Colour {
     Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed(u8),
 }
 
-// These are the standard numeric sequences.
-// See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+// I'm not beyond calling Colour Colour, rather than Color, but I did
+// purposefully name this crate 'ansi-term' so people wouldn't get
+// confused when they tried to install it.
+//
+// Only *after* they'd installed it.
 
 impl Colour {
-    fn foreground_code(&self) -> SendStr {
+    fn write_foreground_code(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Black  => "30".into_maybe_owned(),
-            Red    => "31".into_maybe_owned(),
-            Green  => "32".into_maybe_owned(),
-            Yellow => "33".into_maybe_owned(),
-            Blue   => "34".into_maybe_owned(),
-            Purple => "35".into_maybe_owned(),
-            Cyan   => "36".into_maybe_owned(),
-            White  => "37".into_maybe_owned(),
-            Fixed(num) => format!("38;5;{}", num).into_maybe_owned(),
+            Black  => f.write(b"30"),
+            Red    => f.write(b"31"),
+            Green  => f.write(b"32"),
+            Yellow => f.write(b"33"),
+            Blue   => f.write(b"34"),
+            Purple => f.write(b"35"),
+            Cyan   => f.write(b"36"),
+            White  => f.write(b"37"),
+            Fixed(num) => write!(f, "38;5;{}", num),
         }
     }
 
-    fn background_code(&self) -> SendStr {
+    fn write_background_code(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Black  => "40".into_maybe_owned(),
-            Red    => "41".into_maybe_owned(),
-            Green  => "42".into_maybe_owned(),
-            Yellow => "43".into_maybe_owned(),
-            Blue   => "44".into_maybe_owned(),
-            Purple => "45".into_maybe_owned(),
-            Cyan   => "46".into_maybe_owned(),
-            White  => "47".into_maybe_owned(),
-            Fixed(num) => format!("48;5;{}", num).into_maybe_owned(),
+            Black  => f.write(b"40"),
+            Red    => f.write(b"41"),
+            Green  => f.write(b"42"),
+            Yellow => f.write(b"43"),
+            Blue   => f.write(b"44"),
+            Purple => f.write(b"45"),
+            Cyan   => f.write(b"46"),
+            White  => f.write(b"47"),
+            Fixed(num) => write!(f, "48;5;{}", num),
         }
     }
     
@@ -147,27 +207,26 @@ impl Colour {
     pub fn normal(&self) -> Style {
         Styled { foreground: *self, background: None, bold: false, underline: false }
     }
-}
 
-/// The Paint trait represents a style or colour that can be applied
-/// to a piece of text.
-impl Paint for Colour {
+    /// Paints the given text with this colour, returning an ANSI string.
     /// This is a short-cut so you don't have to use Blue.normal() just
     /// to get blue text.
-    fn paint(&self, input: &str) -> String {
-        let re = format!("\x1B[{}m{}\x1B[0m", self.foreground_code(), input);
-        return re.to_string();
+    pub fn paint(self, input: &str) -> ANSIString {
+        ANSIString::new(input, Foreground(self))
     }
 
-    fn underline(&self) -> Style {
+    /// Returns a Style with the underline property set.
+    pub fn underline(&self) -> Style {
         Styled { foreground: *self, background: None, bold: false, underline: true }
     }
 
-    fn bold(&self) -> Style {
+    /// Returns a Style with the bold property set.
+    pub fn bold(&self) -> Style {
         Styled { foreground: *self, background: None, bold: true, underline: false }
     }
 
-    fn on(&self, background: Colour) -> Style {
+    /// Returns a Style with the background colour property set.
+    pub fn on(&self, background: Colour) -> Style {
         Styled { foreground: *self, background: Some(background), bold: false, underline: false }
     }
 }
@@ -182,32 +241,20 @@ pub enum Style {
     /// The Foreground style provides just a foreground colour.
     Foreground(Colour),
 
-    ///
     /// The Styled style is a catch-all for anything more complicated
     /// than that. It's technically possible for there to be other
     /// cases, such as "bold foreground", but probably isn't worth it.
     Styled { foreground: Colour, background: Option<Colour>, bold: bool, underline: bool, },
 }
 
-impl Paint for Style {
-    fn paint(&self, input: &str) -> String {
-        match *self {
-            Plain => input.to_string(),
-            Foreground(c) => c.paint(input),
-            Styled { foreground, background, bold, underline } => {
-                let bg = match background {
-                    Some(c) => format!("{};", c.background_code()).into_maybe_owned(),
-                    None => "".into_maybe_owned(),
-                };
-                let bo = if bold { "1;" } else { "" };
-                let un = if underline { "4;" } else { "" };
-                let painted = format!("\x1B[{}{}{}{}m{}\x1B[0m", bo, un, bg, foreground.foreground_code(), input.to_string());
-                return painted.to_string();
-            }
-        }
+impl Style {
+    /// Paints the given text with this colour, returning an ANSI string.
+    pub fn paint(self, input: &str) -> ANSIString {
+        ANSIString::new(input, self)
     }
 
-    fn bold(&self) -> Style {
+    /// Returns a Style with the bold property set.
+    pub fn bold(&self) -> Style {
         match *self {
             Plain => Styled { foreground: White, background: None, bold: true, underline: false },
             Foreground(c) => Styled { foreground: c, background: None, bold: true, underline: false },
@@ -215,15 +262,17 @@ impl Paint for Style {
         }
     }
 
-    fn underline(&self) -> Style {
+    /// Returns a Style with the underline property set.
+    pub fn underline(&self) -> Style {
         match *self {
             Plain => Styled { foreground: White, background: None, bold: false, underline: true },
             Foreground(c) => Styled { foreground: c, background: None, bold: false, underline: true },
             Styled { foreground, background, bold, underline: _ } => Styled { foreground: foreground, background: background, bold: bold, underline: true },
         }
     }
-
-    fn on(&self, background: Colour) -> Style {
+    
+    /// Returns a Style with the background colour property set.
+    pub fn on(&self, background: Colour) -> Style {
         match *self {
             Plain => Styled { foreground: White,background: Some(background), bold: false, underline: false },
             Foreground(c) => Styled { foreground: c, background: Some(background), bold: false, underline: false },
@@ -232,10 +281,12 @@ impl Paint for Style {
     }
 }
 
-/// Return a String with all ANSI escape codes removed. For example:
+/// Return a String with all ANSI escape codes removed.
+///
+/// For example:
 ///
 /// ```rust
-/// strip_formatting(Blue.paint("hello!")) == "hello!"
+/// strip_formatting(Blue.paint("hello!").to_string()) == "hello!"
 /// ```
 pub fn strip_formatting(input: String) -> String {
     // What's blue and smells like red paint? Blue paint.
@@ -248,119 +299,43 @@ mod tests {
     use super::strip_formatting;
     use super::Style::Plain;
     use super::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed};
-    use super::Paint;
-
-    #[test]
-    fn test_plain() {
-        let hi = Plain.paint("text/plain");
-        assert!(hi == "text/plain".to_string());
+    
+    macro_rules! test {
+        ($name: ident: $style: expr $input: expr => $result: expr) => {
+            #[test]
+            fn $name() {
+                assert_eq!($style.paint($input).to_string(), $result.to_string())
+            }
+        };
     }
-
-    #[test]
-    fn test_red() {
-        let hi = Red.paint("hi");
-        assert!(hi == "\x1B[31mhi\x1B[0m".to_string());
-    }
-
-    #[test]
-    fn test_black() {
-        let hi = Black.normal().paint("hi");
-        assert!(hi == "\x1B[30mhi\x1B[0m".to_string());
-    }
-
-    #[test]
-    fn test_yellow_bold() {
-        let hi = Yellow.bold().paint("hi");
-        assert!(hi == "\x1B[1;33mhi\x1B[0m".to_string());
-    }
-
-    #[test]
-    fn test_yellow_bold_2() {
-        let hi = Yellow.normal().bold().paint("hi");
-        assert!(hi == "\x1B[1;33mhi\x1B[0m".to_string());
-    }
-
-    #[test]
-    fn test_blue_underline() {
-        let hi = Blue.underline().paint("hi");
-        assert!(hi == "\x1B[4;34mhi\x1B[0m".to_string());
-    }
-
-    #[test]
-    fn test_green_bold_underline() {
-        let hi = Green.bold().underline().paint("hi");
-        assert!(hi == "\x1B[1;4;32mhi\x1B[0m".to_string());
-    }
-
-    #[test]
-    fn test_green_bold_underline_2() {
-        let hi = Green.underline().bold().paint("hi");
-        assert!(hi == "\x1B[1;4;32mhi\x1B[0m".to_string());
-    }
-
-    #[test]
-    fn test_purple_on_white() {
-        let hi = Purple.on(White).paint("hi");
-        assert!(hi == "\x1B[47;35mhi\x1B[0m".to_string());
-    }
-
-    #[test]
-    fn test_purple_on_white_2() {
-        let hi = Purple.normal().on(White).paint("hi");
-        assert!(hi == "\x1B[47;35mhi\x1B[0m".to_string());
-    }
-
-    #[test]
-    fn test_cyan_bold_on_white() {
-        let hi = Cyan.bold().on(White).paint("hi");
-        assert!(hi == "\x1B[1;47;36mhi\x1B[0m".to_string());
-    }
-
-    #[test]
-    fn test_cyan_underline_on_white() {
-        let hi = Cyan.underline().on(White).paint("hi");
-        assert!(hi == "\x1B[4;47;36mhi\x1B[0m".to_string());
-    }
-
-    #[test]
-    fn test_cyan_bold_underline_on_white() {
-        let hi = Cyan.bold().underline().on(White).paint("hi");
-        assert!(hi == "\x1B[1;4;47;36mhi\x1B[0m".to_string());
-    }
-
-    #[test]
-    fn test_cyan_underline_bold_on_white() {
-        let hi = Cyan.underline().bold().on(White).paint("hi");
-        assert!(hi == "\x1B[1;4;47;36mhi\x1B[0m".to_string());
-    }
-
-    #[test]
-    fn test_fixed() {
-        let hi = Fixed(100).paint("hi");
-        assert!(hi == "\x1B[38;5;100mhi\x1B[0m".to_string());
-    }
-
-    #[test]
-    fn test_fixed_on_purple() {
-        let hi = Fixed(100).on(Purple).paint("hi");
-        assert!(hi == "\x1B[45;38;5;100mhi\x1B[0m".to_string());
-    }
-
-    #[test]
-    fn test_fixed_on_fixed() {
-        let hi = Fixed(100).on(Fixed(200)).paint("hi");
-        assert!(hi == "\x1B[48;5;200;38;5;100mhi\x1B[0m".to_string());
-    }
+    
+    test!(plain:                 Plain                             "text/plain" => "text/plain")
+    test!(red:                   Red                               "hi" => "\x1B[31mhi\x1B[0m")
+    test!(black:                 Black.normal()                    "hi" => "\x1B[30mhi\x1B[0m")
+    test!(yellow_bold:           Yellow.bold()                     "hi" => "\x1B[1;33mhi\x1B[0m")
+    test!(yellow_bold_2:         Yellow.normal().bold()            "hi" => "\x1B[1;33mhi\x1B[0m")
+    test!(blue_underline:        Blue.underline()                  "hi" => "\x1B[4;34mhi\x1B[0m")
+    test!(green_bold_ul:         Green.bold().underline()          "hi" => "\x1B[1;4;32mhi\x1B[0m")
+    test!(green_bold_ul_2:       Green.underline().bold()          "hi" => "\x1B[1;4;32mhi\x1B[0m")
+    test!(purple_on_white:       Purple.on(White)                  "hi" => "\x1B[47;35mhi\x1B[0m")
+    test!(purple_on_white_2:     Purple.normal().on(White)         "hi" => "\x1B[47;35mhi\x1B[0m")
+    test!(cyan_bold_on_white:    Cyan.bold().on(White)             "hi" => "\x1B[1;47;36mhi\x1B[0m")
+    test!(cyan_ul_on_white:      Cyan.underline().on(White)        "hi" => "\x1B[4;47;36mhi\x1B[0m")
+    test!(cyan_bold_ul_on_white: Cyan.bold().underline().on(White) "hi" => "\x1B[1;4;47;36mhi\x1B[0m")
+    test!(cyan_ul_bold_on_white: Cyan.underline().bold().on(White) "hi" => "\x1B[1;4;47;36mhi\x1B[0m")
+    test!(fixed:                 Fixed(100)                        "hi" => "\x1B[38;5;100mhi\x1B[0m")
+    test!(fixed_on_purple:       Fixed(100).on(Purple)             "hi" => "\x1B[45;38;5;100mhi\x1B[0m")
+    test!(fixed_on_fixed:        Fixed(100).on(Fixed(200))         "hi" => "\x1B[48;5;200;38;5;100mhi\x1B[0m")
 
     #[test]
     fn test_strip_formatting() {
-        let hi = strip_formatting(Blue.paint("hi"));
+        let hi = strip_formatting(Blue.paint("hi").to_string());
         assert!(hi == "hi".to_string());
     }
 
     #[test]
     fn test_strip_formatting_2() {
-        let hi = strip_formatting(Blue.on(Fixed(230)).bold().paint("hi"));
+        let hi = strip_formatting(Blue.on(Fixed(230)).bold().paint("hi").to_string());
         assert!(hi == "hi".to_string());
     }
 }
