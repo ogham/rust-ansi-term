@@ -115,6 +115,8 @@ pub struct ANSIString<'a> {
     style: Style,
 }
 
+impl<'a> Copy for ANSIString<'a> { }
+
 impl<'a> ANSIString<'a> {
     /// Creates a new ANSI String with the given contents and style.
     pub fn new(contents: &'a str, style: Style) -> ANSIString<'a> {
@@ -166,6 +168,8 @@ impl<'a> fmt::Show for ANSIString<'a> {
 pub enum Colour {
     Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed(u8),
 }
+
+impl Copy for Colour { }
 
 // I'm not beyond calling Colour Colour, rather than Color, but I did
 // purposefully name this crate 'ansi-term' so people wouldn't get
@@ -245,6 +249,8 @@ pub enum Style {
     /// cases, such as "bold foreground", but probably isn't worth it.
     Styled { foreground: Colour, background: Option<Colour>, bold: bool, underline: bool, },
 }
+
+impl Copy for Style { }
 
 impl Style {
     /// Paints the given text with this colour, returning an ANSI string.
