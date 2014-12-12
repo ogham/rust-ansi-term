@@ -1,7 +1,6 @@
 #![crate_name = "ansi_term"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
-#![desc = "A rust library for ANSI terminal colours and styles (bold, underline)"]
 #![feature(macro_rules)]
 
 //! This is a library for controlling colours and formatting, such as
@@ -175,8 +174,8 @@ pub enum Colour {
 // Only *after* they'd installed it.
 
 impl Colour {
-    fn write_foreground_code(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
+    fn write_foreground_code(self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
             Black  => f.write(b"30"),
             Red    => f.write(b"31"),
             Green  => f.write(b"32"),
@@ -189,8 +188,8 @@ impl Colour {
         }
     }
 
-    fn write_background_code(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
+    fn write_background_code(self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
             Black  => f.write(b"40"),
             Red    => f.write(b"41"),
             Green  => f.write(b"42"),
@@ -204,8 +203,8 @@ impl Colour {
     }
     
     /// Return a Style with the foreground colour set to this colour.
-    pub fn normal(&self) -> Style {
-        Styled { foreground: *self, background: None, bold: false, underline: false }
+    pub fn normal(self) -> Style {
+        Styled { foreground: self, background: None, bold: false, underline: false }
     }
 
     /// Paints the given text with this colour, returning an ANSI string.
@@ -216,18 +215,18 @@ impl Colour {
     }
 
     /// Returns a Style with the underline property set.
-    pub fn underline(&self) -> Style {
-        Styled { foreground: *self, background: None, bold: false, underline: true }
+    pub fn underline(self) -> Style {
+        Styled { foreground: self, background: None, bold: false, underline: true }
     }
 
     /// Returns a Style with the bold property set.
-    pub fn bold(&self) -> Style {
-        Styled { foreground: *self, background: None, bold: true, underline: false }
+    pub fn bold(self) -> Style {
+        Styled { foreground: self, background: None, bold: true, underline: false }
     }
 
     /// Returns a Style with the background colour property set.
-    pub fn on(&self, background: Colour) -> Style {
-        Styled { foreground: *self, background: Some(background), bold: false, underline: false }
+    pub fn on(self, background: Colour) -> Style {
+        Styled { foreground: self, background: Some(background), bold: false, underline: false }
     }
 }
 
@@ -254,8 +253,8 @@ impl Style {
     }
 
     /// Returns a Style with the bold property set.
-    pub fn bold(&self) -> Style {
-        match *self {
+    pub fn bold(self) -> Style {
+        match self {
             Plain => Styled { foreground: White, background: None, bold: true, underline: false },
             Foreground(c) => Styled { foreground: c, background: None, bold: true, underline: false },
             Styled { foreground, background, bold: _, underline } => Styled { foreground: foreground, background: background, bold: true, underline: underline },
@@ -263,8 +262,8 @@ impl Style {
     }
 
     /// Returns a Style with the underline property set.
-    pub fn underline(&self) -> Style {
-        match *self {
+    pub fn underline(self) -> Style {
+        match self {
             Plain => Styled { foreground: White, background: None, bold: false, underline: true },
             Foreground(c) => Styled { foreground: c, background: None, bold: false, underline: true },
             Styled { foreground, background, bold, underline: _ } => Styled { foreground: foreground, background: background, bold: bold, underline: true },
@@ -272,8 +271,8 @@ impl Style {
     }
     
     /// Returns a Style with the background colour property set.
-    pub fn on(&self, background: Colour) -> Style {
-        match *self {
+    pub fn on(self, background: Colour) -> Style {
+        match self {
             Plain => Styled { foreground: White,background: Some(background), bold: false, underline: false },
             Foreground(c) => Styled { foreground: c, background: Some(background), bold: false, underline: false },
             Styled { foreground, background: _, bold, underline } => Styled { foreground: foreground, background: Some(background), bold: bold, underline: underline },
@@ -288,10 +287,10 @@ impl Style {
 /// ```rust
 /// strip_formatting(Blue.paint("hello!").to_string()) == "hello!"
 /// ```
-pub fn strip_formatting(input: String) -> String {
+pub fn strip_formatting(input: &str) -> String {
     // What's blue and smells like red paint? Blue paint.
     let re = regex!("\x1B\\[.+?m");
-    re.replace_all(input.as_slice(), "").to_string()
+    re.replace_all(input, "").to_string()
 }
 
 #[cfg(test)]
@@ -329,13 +328,13 @@ mod tests {
 
     #[test]
     fn test_strip_formatting() {
-        let hi = strip_formatting(Blue.paint("hi").to_string());
+        let hi = strip_formatting(Blue.paint("hi").to_string().as_slice());
         assert!(hi == "hi".to_string());
     }
 
     #[test]
     fn test_strip_formatting_2() {
-        let hi = strip_formatting(Blue.on(Fixed(230)).bold().paint("hi").to_string());
+        let hi = strip_formatting(Blue.on(Fixed(230)).bold().paint("hi").to_string().as_slice());
         assert!(hi == "hi".to_string());
     }
 }
