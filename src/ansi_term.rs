@@ -107,7 +107,7 @@ use std::fmt;
 
 /// An ANSI String is a string coupled with the Style to display it
 /// in a terminal.
-/// 
+///
 /// Although not technically a string itself, it can be turned into
 /// one with the `to_string` method.
 pub struct ANSIString<'a> {
@@ -135,15 +135,15 @@ impl<'a> fmt::Show for ANSIString<'a> {
             },
             Styled { foreground, background, bold, underline } => {
                 try!(f.write(b"\x1B["));
-                
+
                 if bold {
                     try!(f.write(b"1;"));
                 }
-                
+
                 if underline {
                     try!(f.write(b"4;"));
                 }
-                
+
                 match background {
                     Some(c) => {
                         try!(c.write_background_code(f));
@@ -151,9 +151,9 @@ impl<'a> fmt::Show for ANSIString<'a> {
                     },
                     None => {},
                 }
-                
+
                 try!(foreground.write_foreground_code(f));
-                
+
                 write!(f, "m{}\x1B[0m", self.string)
             }
         }
@@ -205,7 +205,7 @@ impl Colour {
             Fixed(num) => write!(f, "48;5;{}", num),
         }
     }
-    
+
     /// Return a Style with the foreground colour set to this colour.
     pub fn normal(self) -> Style {
         Styled { foreground: self, background: None, bold: false, underline: false }
@@ -275,7 +275,7 @@ impl Style {
             Styled { foreground, background, bold, underline: _ } => Styled { foreground: foreground, background: background, bold: bold, underline: true },
         }
     }
-    
+
     /// Returns a Style with the background colour property set.
     pub fn on(self, background: Colour) -> Style {
         match self {
@@ -304,7 +304,7 @@ mod tests {
     use super::strip_formatting;
     use super::Style::Plain;
     use super::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed};
-    
+
     macro_rules! test {
         ($name: ident: $style: expr $input: expr => $result: expr) => {
             #[test]
@@ -313,24 +313,24 @@ mod tests {
             }
         };
     }
-    
-    test!(plain:                 Plain                             "text/plain" => "text/plain")
-    test!(red:                   Red                               "hi" => "\x1B[31mhi\x1B[0m")
-    test!(black:                 Black.normal()                    "hi" => "\x1B[30mhi\x1B[0m")
-    test!(yellow_bold:           Yellow.bold()                     "hi" => "\x1B[1;33mhi\x1B[0m")
-    test!(yellow_bold_2:         Yellow.normal().bold()            "hi" => "\x1B[1;33mhi\x1B[0m")
-    test!(blue_underline:        Blue.underline()                  "hi" => "\x1B[4;34mhi\x1B[0m")
-    test!(green_bold_ul:         Green.bold().underline()          "hi" => "\x1B[1;4;32mhi\x1B[0m")
-    test!(green_bold_ul_2:       Green.underline().bold()          "hi" => "\x1B[1;4;32mhi\x1B[0m")
-    test!(purple_on_white:       Purple.on(White)                  "hi" => "\x1B[47;35mhi\x1B[0m")
-    test!(purple_on_white_2:     Purple.normal().on(White)         "hi" => "\x1B[47;35mhi\x1B[0m")
-    test!(cyan_bold_on_white:    Cyan.bold().on(White)             "hi" => "\x1B[1;47;36mhi\x1B[0m")
-    test!(cyan_ul_on_white:      Cyan.underline().on(White)        "hi" => "\x1B[4;47;36mhi\x1B[0m")
-    test!(cyan_bold_ul_on_white: Cyan.bold().underline().on(White) "hi" => "\x1B[1;4;47;36mhi\x1B[0m")
-    test!(cyan_ul_bold_on_white: Cyan.underline().bold().on(White) "hi" => "\x1B[1;4;47;36mhi\x1B[0m")
-    test!(fixed:                 Fixed(100)                        "hi" => "\x1B[38;5;100mhi\x1B[0m")
-    test!(fixed_on_purple:       Fixed(100).on(Purple)             "hi" => "\x1B[45;38;5;100mhi\x1B[0m")
-    test!(fixed_on_fixed:        Fixed(100).on(Fixed(200))         "hi" => "\x1B[48;5;200;38;5;100mhi\x1B[0m")
+
+    test!(plain:                 Plain                             "text/plain" => "text/plain");
+    test!(red:                   Red                               "hi" => "\x1B[31mhi\x1B[0m");
+    test!(black:                 Black.normal()                    "hi" => "\x1B[30mhi\x1B[0m");
+    test!(yellow_bold:           Yellow.bold()                     "hi" => "\x1B[1;33mhi\x1B[0m");
+    test!(yellow_bold_2:         Yellow.normal().bold()            "hi" => "\x1B[1;33mhi\x1B[0m");
+    test!(blue_underline:        Blue.underline()                  "hi" => "\x1B[4;34mhi\x1B[0m");
+    test!(green_bold_ul:         Green.bold().underline()          "hi" => "\x1B[1;4;32mhi\x1B[0m");
+    test!(green_bold_ul_2:       Green.underline().bold()          "hi" => "\x1B[1;4;32mhi\x1B[0m");
+    test!(purple_on_white:       Purple.on(White)                  "hi" => "\x1B[47;35mhi\x1B[0m");
+    test!(purple_on_white_2:     Purple.normal().on(White)         "hi" => "\x1B[47;35mhi\x1B[0m");
+    test!(cyan_bold_on_white:    Cyan.bold().on(White)             "hi" => "\x1B[1;47;36mhi\x1B[0m");
+    test!(cyan_ul_on_white:      Cyan.underline().on(White)        "hi" => "\x1B[4;47;36mhi\x1B[0m");
+    test!(cyan_bold_ul_on_white: Cyan.bold().underline().on(White) "hi" => "\x1B[1;4;47;36mhi\x1B[0m");
+    test!(cyan_ul_bold_on_white: Cyan.underline().bold().on(White) "hi" => "\x1B[1;4;47;36mhi\x1B[0m");
+    test!(fixed:                 Fixed(100)                        "hi" => "\x1B[38;5;100mhi\x1B[0m");
+    test!(fixed_on_purple:       Fixed(100).on(Purple)             "hi" => "\x1B[45;38;5;100mhi\x1B[0m");
+    test!(fixed_on_fixed:        Fixed(100).on(Fixed(200))         "hi" => "\x1B[48;5;200;38;5;100mhi\x1B[0m");
 
     #[test]
     fn test_strip_formatting() {
