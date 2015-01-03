@@ -129,25 +129,25 @@ impl<'a> fmt::Show for ANSIString<'a> {
         match self.style {
             Plain => write!(f, "{}", self.string),
             Foreground(colour) => {
-                try!(f.write(b"\x1B["));
+                try!(f.write_str("\x1B["));
                 try!(colour.write_foreground_code(f));
                 write!(f, "m{}\x1B[0m", self.string)
             },
             Styled { foreground, background, bold, underline } => {
-                try!(f.write(b"\x1B["));
+                try!(f.write_str("\x1B["));
 
                 if bold {
-                    try!(f.write(b"1;"));
+                    try!(f.write_str("1;"));
                 }
 
                 if underline {
-                    try!(f.write(b"4;"));
+                    try!(f.write_str("4;"));
                 }
 
                 match background {
                     Some(c) => {
                         try!(c.write_background_code(f));
-                        try!(f.write(b";"));
+                        try!(f.write_str(";"));
                     },
                     None => {},
                 }
@@ -180,28 +180,28 @@ impl Copy for Colour { }
 impl Colour {
     fn write_foreground_code(self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Black  => f.write(b"30"),
-            Red    => f.write(b"31"),
-            Green  => f.write(b"32"),
-            Yellow => f.write(b"33"),
-            Blue   => f.write(b"34"),
-            Purple => f.write(b"35"),
-            Cyan   => f.write(b"36"),
-            White  => f.write(b"37"),
+            Black  => f.write_str("30"),
+            Red    => f.write_str("31"),
+            Green  => f.write_str("32"),
+            Yellow => f.write_str("33"),
+            Blue   => f.write_str("34"),
+            Purple => f.write_str("35"),
+            Cyan   => f.write_str("36"),
+            White  => f.write_str("37"),
             Fixed(num) => write!(f, "38;5;{}", num),
         }
     }
 
     fn write_background_code(self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Black  => f.write(b"40"),
-            Red    => f.write(b"41"),
-            Green  => f.write(b"42"),
-            Yellow => f.write(b"43"),
-            Blue   => f.write(b"44"),
-            Purple => f.write(b"45"),
-            Cyan   => f.write(b"46"),
-            White  => f.write(b"47"),
+            Black  => f.write_str("40"),
+            Red    => f.write_str("41"),
+            Green  => f.write_str("42"),
+            Yellow => f.write_str("43"),
+            Blue   => f.write_str("44"),
+            Purple => f.write_str("45"),
+            Cyan   => f.write_str("46"),
+            White  => f.write_str("47"),
             Fixed(num) => write!(f, "48;5;{}", num),
         }
     }
