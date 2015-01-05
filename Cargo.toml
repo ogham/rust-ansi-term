@@ -7,8 +7,12 @@ documentation = "http://bsago.me/doc/ansi_term/"
 homepage = "https://github.com/ogham/rust-ansi-term"
 license = "MIT"
 readme = "README.md"
-version = "0.4.0"
+version = "0.4.1"
 
 [lib]
 name = "ansi_term"
 doctest = false
+
+[dependencies]
+regex = "0.1.8"
+regex_macros = "0.1.2"
