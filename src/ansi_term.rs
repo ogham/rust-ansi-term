@@ -1,7 +1,7 @@
 #![crate_name = "ansi_term"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
-#![feature(phase, macro_rules)]
+#![feature(plugin)]
 
 //! This is a library for controlling colours and formatting, such as
 //! red bold text or blue underlined text, on ANSI terminals.
@@ -99,7 +99,7 @@
 //! Plain.paint("No colours here.")
 //! ```
 
-#[phase(plugin)]
+#[plugin]
 extern crate regex_macros;
 extern crate regex;
 
