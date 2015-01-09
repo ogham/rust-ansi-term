@@ -2,6 +2,7 @@
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
 #![feature(plugin)]
+#![allow(unstable)]
 
 //! This is a library for controlling colours and formatting, such as
 //! red bold text or blue underlined text, on ANSI terminals.
@@ -126,7 +127,7 @@ impl<'a> ANSIString<'a> {
     }
 }
 
-impl<'a> fmt::Show for ANSIString<'a> {
+impl<'a> fmt::String for ANSIString<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.style {
             Plain => write!(f, "{}", self.string),
@@ -308,7 +309,7 @@ mod tests {
     use super::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed};
 
     macro_rules! test {
-        ($name: ident: $style: expr $input: expr => $result: expr) => {
+        ($name: ident: $style: expr; $input: expr => $result: expr) => {
             #[test]
             fn $name() {
                 assert_eq!($style.paint($input).to_string(), $result.to_string())
@@ -316,23 +317,23 @@ mod tests {
         };
     }
 
-    test!(plain:                 Plain                             "text/plain" => "text/plain");
-    test!(red:                   Red                               "hi" => "\x1B[31mhi\x1B[0m");
-    test!(black:                 Black.normal()                    "hi" => "\x1B[30mhi\x1B[0m");
-    test!(yellow_bold:           Yellow.bold()                     "hi" => "\x1B[1;33mhi\x1B[0m");
-    test!(yellow_bold_2:         Yellow.normal().bold()            "hi" => "\x1B[1;33mhi\x1B[0m");
-    test!(blue_underline:        Blue.underline()                  "hi" => "\x1B[4;34mhi\x1B[0m");
-    test!(green_bold_ul:         Green.bold().underline()          "hi" => "\x1B[1;4;32mhi\x1B[0m");
-    test!(green_bold_ul_2:       Green.underline().bold()          "hi" => "\x1B[1;4;32mhi\x1B[0m");
-    test!(purple_on_white:       Purple.on(White)                  "hi" => "\x1B[47;35mhi\x1B[0m");
-    test!(purple_on_white_2:     Purple.normal().on(White)         "hi" => "\x1B[47;35mhi\x1B[0m");
-    test!(cyan_bold_on_white:    Cyan.bold().on(White)             "hi" => "\x1B[1;47;36mhi\x1B[0m");
-    test!(cyan_ul_on_white:      Cyan.underline().on(White)        "hi" => "\x1B[4;47;36mhi\x1B[0m");
-    test!(cyan_bold_ul_on_white: Cyan.bold().underline().on(White) "hi" => "\x1B[1;4;47;36mhi\x1B[0m");
-    test!(cyan_ul_bold_on_white: Cyan.underline().bold().on(White) "hi" => "\x1B[1;4;47;36mhi\x1B[0m");
-    test!(fixed:                 Fixed(100)                        "hi" => "\x1B[38;5;100mhi\x1B[0m");
-    test!(fixed_on_purple:       Fixed(100).on(Purple)             "hi" => "\x1B[45;38;5;100mhi\x1B[0m");
-    test!(fixed_on_fixed:        Fixed(100).on(Fixed(200))         "hi" => "\x1B[48;5;200;38;5;100mhi\x1B[0m");
+    test!(plain:                 Plain;                             "text/plain" => "text/plain");
+    test!(red:                   Red;                               "hi" => "\x1B[31mhi\x1B[0m");
+    test!(black:                 Black.normal();                    "hi" => "\x1B[30mhi\x1B[0m");
+    test!(yellow_bold:           Yellow.bold();                     "hi" => "\x1B[1;33mhi\x1B[0m");
+    test!(yellow_bold_2:         Yellow.normal().bold();            "hi" => "\x1B[1;33mhi\x1B[0m");
+    test!(blue_underline:        Blue.underline();                  "hi" => "\x1B[4;34mhi\x1B[0m");
+    test!(green_bold_ul:         Green.bold().underline();          "hi" => "\x1B[1;4;32mhi\x1B[0m");
+    test!(green_bold_ul_2:       Green.underline().bold();          "hi" => "\x1B[1;4;32mhi\x1B[0m");
+    test!(purple_on_white:       Purple.on(White);                  "hi" => "\x1B[47;35mhi\x1B[0m");
+    test!(purple_on_white_2:     Purple.normal().on(White);         "hi" => "\x1B[47;35mhi\x1B[0m");
+    test!(cyan_bold_on_white:    Cyan.bold().on(White);             "hi" => "\x1B[1;47;36mhi\x1B[0m");
+    test!(cyan_ul_on_white:      Cyan.underline().on(White);        "hi" => "\x1B[4;47;36mhi\x1B[0m");
+    test!(cyan_bold_ul_on_white: Cyan.bold().underline().on(White); "hi" => "\x1B[1;4;47;36mhi\x1B[0m");
+    test!(cyan_ul_bold_on_white: Cyan.underline().bold().on(White); "hi" => "\x1B[1;4;47;36mhi\x1B[0m");
+    test!(fixed:                 Fixed(100);                        "hi" => "\x1B[38;5;100mhi\x1B[0m");
+    test!(fixed_on_purple:       Fixed(100).on(Purple);             "hi" => "\x1B[45;38;5;100mhi\x1B[0m");
+    test!(fixed_on_fixed:        Fixed(100).on(Fixed(200));         "hi" => "\x1B[48;5;200;38;5;100mhi\x1B[0m");
 
     #[test]
     fn test_strip_formatting() {
