@@ -1,8 +1,7 @@
 #![crate_name = "ansi_term"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
-#![feature(plugin)]
-#![allow(unstable)]
+#![feature(collections, core, plugin)]
 
 //! This is a library for controlling colours and formatting, such as
 //! red bold text or blue underlined text, on ANSI terminals.
@@ -127,7 +126,7 @@ impl<'a> ANSIString<'a> {
     }
 }
 
-impl<'a> fmt::String for ANSIString<'a> {
+impl<'a> fmt::Display for ANSIString<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.style {
             Plain => write!(f, "{}", self.string),

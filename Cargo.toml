@@ -7,7 +7,7 @@ documentation = "http://bsago.me/doc/ansi_term/"
 homepage = "https://github.com/ogham/rust-ansi-term"
 license = "MIT"
 readme = "README.md"
-version = "0.4.2"
+version = "0.4.3"
 
 [lib]
 name = "ansi_term"
