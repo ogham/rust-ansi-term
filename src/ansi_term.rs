@@ -1,7 +1,7 @@
 #![crate_name = "ansi_term"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
-#![feature(collections, core, plugin)]
+#![feature(core, plugin)]
 
 //! This is a library for controlling colours and formatting, such as
 //! red bold text or blue underlined text, on ANSI terminals.
