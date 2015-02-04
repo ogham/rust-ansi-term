@@ -99,7 +99,7 @@
 //! Plain.paint("No colours here.")
 //! ```
 
-#[plugin]
+#[plugin] #[no_link]
 extern crate regex_macros;
 extern crate regex;
 
