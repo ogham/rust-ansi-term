@@ -1,7 +1,8 @@
 #![crate_name = "ansi_term"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
-#![feature(core, plugin)]
+#![feature(plugin)]
+#![plugin(regex_macros)]
 
 //! This is a library for controlling colours and formatting, such as
 //! red bold text or blue underlined text, on ANSI terminals.
@@ -99,8 +100,6 @@
 //! Plain.paint("No colours here.")
 //! ```
 
-#[plugin] #[no_link]
-extern crate regex_macros;
 extern crate regex;
 
 use Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed};
