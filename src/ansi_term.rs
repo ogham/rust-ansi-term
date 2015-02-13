@@ -284,22 +284,8 @@ impl Style {
     }
 }
 
-/// Return a String with all ANSI escape codes removed.
-///
-/// For example:
-///
-/// ```rust
-/// strip_formatting(Blue.paint("hello!").to_string()) == "hello!"
-/// ```
-pub fn strip_formatting(input: &str) -> String {
-    // What's blue and smells like red paint? Blue paint.
-    let re = regex!("\x1B\\[.+?m");
-    re.replace_all(input, "").to_string()
-}
-
 #[cfg(test)]
 mod tests {
-    use super::strip_formatting;
     use super::Style::Plain;
     use super::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed};
 
@@ -329,16 +315,4 @@ mod tests {
     test!(fixed:                 Fixed(100);                        "hi" => "\x1B[38;5;100mhi\x1B[0m");
     test!(fixed_on_purple:       Fixed(100).on(Purple);             "hi" => "\x1B[45;38;5;100mhi\x1B[0m");
     test!(fixed_on_fixed:        Fixed(100).on(Fixed(200));         "hi" => "\x1B[48;5;200;38;5;100mhi\x1B[0m");
-
-    #[test]
-    fn test_strip_formatting() {
-        let hi = strip_formatting(Blue.paint("hi").to_string().as_slice());
-        assert!(hi == "hi".to_string());
-    }
-
-    #[test]
-    fn test_strip_formatting_2() {
-        let hi = strip_formatting(Blue.on(Fixed(230)).bold().paint("hi").to_string().as_slice());
-        assert!(hi == "hi".to_string());
-    }
 }
