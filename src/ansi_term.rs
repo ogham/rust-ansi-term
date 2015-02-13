@@ -98,8 +98,9 @@
 //! Plain.paint("No colours here.")
 //! ```
 
-use Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed};
-use Style::{Plain, Foreground, Styled};
+use Colour::*;
+use Style::*;
+use Difference::*;
 use std::fmt;
 
 /// An ANSI String is a string coupled with the Style to display it
@@ -122,45 +123,9 @@ impl<'a> ANSIString<'a> {
 
 impl<'a> fmt::Display for ANSIString<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.style {
-            Plain => write!(f, "{}", self.string),
-            Foreground(colour) => {
-                try!(f.write_str("\x1B["));
-                try!(colour.write_foreground_code(f));
-                write!(f, "m{}\x1B[0m", self.string)
-            },
-            Styled { foreground, background, bold, underline } => {
-                let mut semicolon = false;
-                try!(f.write_str("\x1B["));
-
-                if bold {
-                    try!(f.write_str("1"));
-                    semicolon = true;
-                }
-
-                if underline {
-                    if semicolon { try!(f.write_str(";")); }
-                    try!(f.write_str("4"));
-                    semicolon = true;
-                }
-
-                match background {
-                    Some(c) => {
-                        if semicolon { try!(f.write_str(";")); }
-                        try!(c.write_background_code(f));
-                        semicolon = true;
-                    },
-                    None => {},
-                }
-
-                if let Some(fg) = foreground {
-                    if semicolon { try!(f.write_str(";")); }
-                    try!(fg.write_foreground_code(f));
-                }
-
-                write!(f, "m{}\x1B[0m", self.string)
-            }
-        }
+        try!(self.style.write_prefix(f));
+        try!(write!(f, "{}", self.string));
+        self.style.write_suffix(f)
     }
 }
 
@@ -169,7 +134,7 @@ impl<'a> fmt::Display for ANSIString<'a> {
 ///
 /// These use the standard numeric sequences.
 /// See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
-#[derive(Copy)]
+#[derive(PartialEq, Copy, Debug)]
 pub enum Colour {
     Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed(u8),
 }
@@ -239,7 +204,7 @@ impl Colour {
 
 /// A style is a collection of properties that can format a string
 /// using ANSI escape codes.
-#[derive(Copy)]
+#[derive(PartialEq, Copy, Debug)]
 pub enum Style {
 
     /// The Plain style provides no formatting.
@@ -285,13 +250,208 @@ impl Style {
             Foreground(c) => Styled { foreground: Some(c), background: Some(background), bold: false, underline: false },
             Styled { foreground, background: _, bold, underline } => Styled { foreground: foreground, background: Some(background), bold: bold, underline: underline },
         }
+   }
+
+   fn write_prefix(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Plain => Ok(()),
+            Foreground(colour) => {
+                try!(f.write_str("\x1B["));
+                try!(colour.write_foreground_code(f));
+                write!(f, "m")
+            },
+            Styled { foreground, background, bold, underline } => {
+                let mut semicolon = false;
+                try!(f.write_str("\x1B["));
+
+                if bold {
+                    try!(f.write_str("1"));
+                    semicolon = true;
+                }
+
+                if underline {
+                    if semicolon { try!(f.write_str(";")); }
+                    try!(f.write_str("4"));
+                    semicolon = true;
+                }
+
+                match background {
+                    Some(c) => {
+                        if semicolon { try!(f.write_str(";")); }
+                        try!(c.write_background_code(f));
+                        semicolon = true;
+                    },
+                    None => {},
+                }
+
+                if let Some(fg) = foreground {
+                    if semicolon { try!(f.write_str(";")); }
+                    try!(fg.write_foreground_code(f));
+                }
+
+                write!(f, "m")
+            },
+        }
     }
+
+    fn write_suffix(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Plain => Ok(()),
+            _     => write!(f, "\x1B[0m"),
+        }
+    }
+
+    /// Compute the 'style difference' required to turn an existing style into
+    /// the given, second style.
+    ///
+    /// For example, to turn green text into green bold text, it's redundant
+    /// to write a reset command then a second green+bold command, instead of
+    /// just writing one bold command. This method should see that both styles
+    /// use the foreground colour green, and reduce it to a single command.
+    ///
+    /// This method returns an enum value because it's not actually always
+    /// possible to turn one style into another: for example, text could be
+    /// made bold and underlined, but you can't remove the bold property
+    /// without also removing the underline property. So when this has to
+    /// happen, this function returns None, meaning that the entire set of
+    /// styles should be reset and begun again.
+    fn difference(&self, next_style: Style) -> Difference {
+        match (*self, next_style) {
+
+            // Nothing into nothing, carry the nothing - still nothing...
+            (Plain, Plain) => NoDifference,
+
+            // When coming from no style at all, *any* style will just require
+            // the same formatting characters as it normally would.
+            (Plain, _) => ExtraStyles(next_style),
+
+            // Similarly, going *to* no style at all can't be done other than
+            // with a reset command, so that's what gets sent.
+            (Foreground(_), Plain) => Reset,
+
+            // Converting between two foreground colours only requires extra
+            // styles if the colours are actually different.
+            (Foreground(c), Foreground(d)) if c == d => NoDifference,
+            (Foreground(_), Foreground(d))           => ExtraStyles(Foreground(d)),
+
+            // Adding styles to just a foreground colour requires
+            (Foreground(c), Styled { foreground: d, background, bold, underline }) => {
+                if d == Some(c) {
+                    ExtraStyles(Styled { foreground: None, background: background, bold: bold, underline: underline })
+                }
+                else {
+                    ExtraStyles(next_style)
+                }
+            },
+
+            // There's no way to go from *any style at all* to no styles at
+            // all, so just Reset. Except if the Styled struct happens to be
+            // entirely empty, but this can't happen using this library's
+            // current logic.
+            (Styled { foreground: _, background: _, bold: _, underline: _ }, Plain) => Reset,
+
+            // A style with attributes will usually need to be reset, unless
+            // none of them is actually present, in which case it comes down
+            // to comparing the foreground colours as before.
+            (Styled { foreground, background, bold, underline }, Foreground(c)) => {
+                if background.is_some() || bold || underline {
+                    Reset
+                }
+                else if foreground == Some(c) {
+                    NoDifference
+                }
+                else {
+                    ExtraStyles(Foreground(c))
+                }
+            },
+
+            (Styled { foreground: c, background, bold, underline }, Styled { foreground: d, background: background2, bold: bold2, underline: underline2 }) => {
+                // If any of the attributes need to be reset, then the whole
+                // thing needs to be reset.
+                if (background.is_some() && background2.is_none()) || (bold && !bold2) || (underline && !underline2) {
+                    Reset
+                }
+
+                // Otherwise, build up an extra style based on the attributes
+                // that have to be added.
+                else {
+                    let mut style = Style::Plain;
+
+                    if c != d { style = d.unwrap().normal() }
+                    if background != background2 { style = style.on(background2.unwrap()) }
+                    if bold != bold2 { style = style.bold() }
+                    if underline != underline2 { style = style.underline() }
+
+                    // If *no* attributes have been added, then nothing
+                    // actually needs to be changed!
+                    if let Style::Plain = style {
+                        NoDifference
+                    }
+                    else {
+                        ExtraStyles(style)
+                    }
+                }
+            },
+        }
+    }
+}
+
+/// When printing out one coloured string followed by another, use one of
+/// these rules to figure out which *extra* control codes need to be sent.
+#[derive(PartialEq, Copy, Debug)]
+enum Difference {
+
+    /// Print out the control codes specified by this style to end up looking
+    /// like the second string's styles.
+    ExtraStyles(Style),
+
+    /// Converting between these two is impossible, so just send a reset
+    /// command and then the second string's styles.
+    Reset,
+
+    /// The before style is exactly the same as the after style, so no further
+    /// control codes need to be printed.
+    NoDifference,
+}
+
+/// A set of `ANSIString`s collected together, in order to be written with a
+/// minimum of control characters.
+pub struct ANSIStrings<'a>(pub &'a [ANSIString<'a>]);
+
+impl<'a> fmt::Display for ANSIStrings<'a> {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+	    let first = match self.0.first() {
+	        None => return Ok(()),
+	        Some(f) => f,
+	    };
+
+        try!(first.style.write_prefix(f));
+	    try!(write!(f, "{}", first.string));
+
+	    for window in self.0.windows(2) {
+	        match window[0].style.difference(window[1].style) {
+	            ExtraStyles(style) => try!(style.write_prefix(f)),
+	            Reset => {
+                    try!(f.write_str("\x1B[0m"));
+                    try!(window[1].style.write_prefix(f));
+	            },
+	            NoDifference => { /* Do nothing! */ },
+	        }
+
+            try!(write!(f, "{}", window[1].string));
+	    }
+
+	    try!(f.write_str("\x1B[0m"));
+
+	    Ok(())
+	}
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Style::Plain;
-    use super::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed};
+    pub use super::Style::*;
+    pub use super::Colour::*;
+    pub use super::Difference::*;
 
     macro_rules! test {
         ($name: ident: $style: expr; $input: expr => $result: expr) => {
@@ -322,4 +482,36 @@ mod tests {
     test!(bold:                  Plain.bold();                      "hi" => "\x1B[1mhi\x1B[0m");
     test!(underline:             Plain.underline();                 "hi" => "\x1B[4mhi\x1B[0m");
     test!(bunderline:            Plain.bold().underline();          "hi" => "\x1B[1;4mhi\x1B[0m");
+
+    mod difference {
+        use super::*;
+
+        #[test]
+        fn diff() {
+            let expected = ExtraStyles(Plain.bold());
+            let got = Green.normal().difference(Green.bold());
+            assert_eq!(expected, got)
+        }
+
+        #[test]
+        fn dlb() {
+            let got = Green.bold().difference(Green.normal());
+            assert_eq!(Reset, got)
+        }
+
+        #[test]
+        fn nothing() {
+            assert_eq!(NoDifference, Green.bold().difference(Green.bold()));
+        }
+
+        #[test]
+        fn nothing_2() {
+            assert_eq!(NoDifference, Green.normal().difference(Green.normal()));
+        }
+
+        #[test]
+        fn colour_change() {
+            assert_eq!(ExtraStyles(Blue.normal()), Red.normal().difference(Blue.normal()))
+        }
+    }
 }
