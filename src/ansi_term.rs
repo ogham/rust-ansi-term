@@ -111,12 +111,11 @@ use std::fmt;
 ///
 /// Although not technically a string itself, it can be turned into
 /// one with the `to_string` method.
+#[derive(Copy)]
 pub struct ANSIString<'a> {
     string: &'a str,
     style: Style,
 }
-
-impl<'a> Copy for ANSIString<'a> { }
 
 impl<'a> ANSIString<'a> {
     /// Creates a new ANSI String with the given contents and style.
@@ -166,11 +165,10 @@ impl<'a> fmt::Display for ANSIString<'a> {
 ///
 /// These use the standard numeric sequences.
 /// See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+#[derive(Copy)]
 pub enum Colour {
     Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed(u8),
 }
-
-impl Copy for Colour { }
 
 // I'm not beyond calling Colour Colour, rather than Color, but I did
 // purposefully name this crate 'ansi-term' so people wouldn't get
@@ -237,6 +235,7 @@ impl Colour {
 
 /// A style is a collection of properties that can format a string
 /// using ANSI escape codes.
+#[derive(Copy)]
 pub enum Style {
 
     /// The Plain style provides no formatting.
@@ -250,8 +249,6 @@ pub enum Style {
     /// cases, such as "bold foreground", but probably isn't worth it.
     Styled { foreground: Colour, background: Option<Colour>, bold: bool, underline: bool, },
 }
-
-impl Copy for Style { }
 
 impl Style {
     /// Paints the given text with this colour, returning an ANSI string.
