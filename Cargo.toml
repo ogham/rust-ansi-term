@@ -12,7 +12,3 @@ version = "0.4.6"
 [lib]
 name = "ansi_term"
 doctest = false
-
-[dependencies]
-regex = "0.1.13"
-regex_macros = "0.1.8"
