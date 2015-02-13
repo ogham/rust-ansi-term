@@ -134,25 +134,33 @@ impl<'a> fmt::Display for ANSIString<'a> {
                 write!(f, "m{}\x1B[0m", self.string)
             },
             Styled { foreground, background, bold, underline } => {
+                let mut semicolon = false;
                 try!(f.write_str("\x1B["));
 
                 if bold {
-                    try!(f.write_str("1;"));
+                    try!(f.write_str("1"));
+                    semicolon = true;
                 }
 
                 if underline {
-                    try!(f.write_str("4;"));
+                    if semicolon { try!(f.write_str(";")); }
+                    try!(f.write_str("4"));
+                    semicolon = true;
                 }
 
                 match background {
                     Some(c) => {
+                        if semicolon { try!(f.write_str(";")); }
                         try!(c.write_background_code(f));
-                        try!(f.write_str(";"));
+                        semicolon = true;
                     },
                     None => {},
                 }
 
-                try!(foreground.write_foreground_code(f));
+                if let Some(fg) = foreground {
+                    if semicolon { try!(f.write_str(";")); }
+                    try!(fg.write_foreground_code(f));
+                }
 
                 write!(f, "m{}\x1B[0m", self.string)
             }
@@ -207,7 +215,7 @@ impl Colour {
 
     /// Return a Style with the foreground colour set to this colour.
     pub fn normal(self) -> Style {
-        Styled { foreground: self, background: None, bold: false, underline: false }
+        Styled { foreground: Some(self), background: None, bold: false, underline: false }
     }
 
     /// Paints the given text with this colour, returning an ANSI string.
@@ -219,17 +227,17 @@ impl Colour {
 
     /// Returns a Style with the underline property set.
     pub fn underline(self) -> Style {
-        Styled { foreground: self, background: None, bold: false, underline: true }
+        Styled { foreground: Some(self), background: None, bold: false, underline: true }
     }
 
     /// Returns a Style with the bold property set.
     pub fn bold(self) -> Style {
-        Styled { foreground: self, background: None, bold: true, underline: false }
+        Styled { foreground: Some(self), background: None, bold: true, underline: false }
     }
 
     /// Returns a Style with the background colour property set.
     pub fn on(self, background: Colour) -> Style {
-        Styled { foreground: self, background: Some(background), bold: false, underline: false }
+        Styled { foreground: Some(self), background: Some(background), bold: false, underline: false }
     }
 }
 
@@ -247,7 +255,7 @@ pub enum Style {
     /// The Styled style is a catch-all for anything more complicated
     /// than that. It's technically possible for there to be other
     /// cases, such as "bold foreground", but probably isn't worth it.
-    Styled { foreground: Colour, background: Option<Colour>, bold: bool, underline: bool, },
+    Styled { foreground: Option<Colour>, background: Option<Colour>, bold: bool, underline: bool },
 }
 
 impl Style {
@@ -259,8 +267,8 @@ impl Style {
     /// Returns a Style with the bold property set.
     pub fn bold(self) -> Style {
         match self {
-            Plain => Styled { foreground: White, background: None, bold: true, underline: false },
-            Foreground(c) => Styled { foreground: c, background: None, bold: true, underline: false },
+            Plain => Styled { foreground: None, background: None, bold: true, underline: false },
+            Foreground(c) => Styled { foreground: Some(c), background: None, bold: true, underline: false },
             Styled { foreground, background, bold: _, underline } => Styled { foreground: foreground, background: background, bold: true, underline: underline },
         }
     }
@@ -268,8 +276,8 @@ impl Style {
     /// Returns a Style with the underline property set.
     pub fn underline(self) -> Style {
         match self {
-            Plain => Styled { foreground: White, background: None, bold: false, underline: true },
-            Foreground(c) => Styled { foreground: c, background: None, bold: false, underline: true },
+            Plain => Styled { foreground: None, background: None, bold: false, underline: true },
+            Foreground(c) => Styled { foreground: Some(c), background: None, bold: false, underline: true },
             Styled { foreground, background, bold, underline: _ } => Styled { foreground: foreground, background: background, bold: bold, underline: true },
         }
     }
@@ -277,8 +285,8 @@ impl Style {
     /// Returns a Style with the background colour property set.
     pub fn on(self, background: Colour) -> Style {
         match self {
-            Plain => Styled { foreground: White,background: Some(background), bold: false, underline: false },
-            Foreground(c) => Styled { foreground: c, background: Some(background), bold: false, underline: false },
+            Plain => Styled { foreground: None, background: Some(background), bold: false, underline: false },
+            Foreground(c) => Styled { foreground: Some(c), background: Some(background), bold: false, underline: false },
             Styled { foreground, background: _, bold, underline } => Styled { foreground: foreground, background: Some(background), bold: bold, underline: underline },
         }
     }
@@ -315,4 +323,7 @@ mod tests {
     test!(fixed:                 Fixed(100);                        "hi" => "\x1B[38;5;100mhi\x1B[0m");
     test!(fixed_on_purple:       Fixed(100).on(Purple);             "hi" => "\x1B[45;38;5;100mhi\x1B[0m");
     test!(fixed_on_fixed:        Fixed(100).on(Fixed(200));         "hi" => "\x1B[48;5;200;38;5;100mhi\x1B[0m");
+    test!(bold:                  Plain.bold();                      "hi" => "\x1B[1mhi\x1B[0m");
+    test!(underline:             Plain.underline();                 "hi" => "\x1B[4mhi\x1B[0m");
+    test!(bunderline:            Plain.bold().underline();          "hi" => "\x1B[1;4mhi\x1B[0m");
 }
