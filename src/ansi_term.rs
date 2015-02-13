@@ -123,51 +123,10 @@ impl<'a> ANSIString<'a> {
 
 impl<'a> fmt::Display for ANSIString<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.style {
-            Plain => write!(f, "{}", self.string),
-            Foreground(colour) => {
-                try!(f.write_str("\x1B["));
-                try!(colour.write_foreground_code(f));
-                write!(f, "m{}\x1B[0m", self.string)
-            },
-            Styled { foreground, background, bold, underline } => {
-                try!(style_stuff(f, foreground, background, bold, underline));
-                write!(f, "m{}\x1B[0m", self.string)
-            },
-        }
+        try!(self.style.write_prefix(f));
+        try!(write!(f, "{}", self.string));
+        self.style.write_suffix(f)
     }
-}
-
-fn style_stuff(f: &mut fmt::Formatter, foreground: Option<Colour>, background: Option<Colour>, bold: bool, underline: bool) -> fmt::Result {
-    let mut semicolon = false;
-    try!(f.write_str("\x1B["));
-
-    if bold {
-        try!(f.write_str("1"));
-        semicolon = true;
-    }
-
-    if underline {
-        if semicolon { try!(f.write_str(";")); }
-        try!(f.write_str("4"));
-        semicolon = true;
-    }
-
-    match background {
-        Some(c) => {
-            if semicolon { try!(f.write_str(";")); }
-            try!(c.write_background_code(f));
-            semicolon = true;
-        },
-        None => {},
-    }
-
-    if let Some(fg) = foreground {
-        if semicolon { try!(f.write_str(";")); }
-        try!(fg.write_foreground_code(f));
-    }
-
-    Ok(())
 }
 
 /// A colour is one specific type of ANSI escape code, and can refer
@@ -302,11 +261,45 @@ impl Style {
                 write!(f, "m")
             },
             Styled { foreground, background, bold, underline } => {
-                try!(style_stuff(f, foreground, background, bold, underline));
+                let mut semicolon = false;
+                try!(f.write_str("\x1B["));
+
+                if bold {
+                    try!(f.write_str("1"));
+                    semicolon = true;
+                }
+
+                if underline {
+                    if semicolon { try!(f.write_str(";")); }
+                    try!(f.write_str("4"));
+                    semicolon = true;
+                }
+
+                match background {
+                    Some(c) => {
+                        if semicolon { try!(f.write_str(";")); }
+                        try!(c.write_background_code(f));
+                        semicolon = true;
+                    },
+                    None => {},
+                }
+
+                if let Some(fg) = foreground {
+                    if semicolon { try!(f.write_str(";")); }
+                    try!(fg.write_foreground_code(f));
+                }
+
                 write!(f, "m")
             },
         }
-   }
+    }
+
+    fn write_suffix(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Plain => Ok(()),
+            _     => write!(f, "\x1B[0m"),
+        }
+    }
 
     /// Compute the 'style difference' required to turn an existing style into
     /// the given, second style.
