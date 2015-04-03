@@ -108,7 +108,7 @@ use std::fmt;
 ///
 /// Although not technically a string itself, it can be turned into
 /// one with the `to_string` method.
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct ANSIString<'a> {
     string: &'a str,
     style: Style,
@@ -134,7 +134,7 @@ impl<'a> fmt::Display for ANSIString<'a> {
 ///
 /// These use the standard numeric sequences.
 /// See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
-#[derive(PartialEq, Copy, Debug)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub enum Colour {
     Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed(u8),
 }
@@ -204,7 +204,7 @@ impl Colour {
 
 /// A style is a collection of properties that can format a string
 /// using ANSI escape codes.
-#[derive(PartialEq, Copy, Debug)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub enum Style {
 
     /// The Plain style provides no formatting.
@@ -398,7 +398,7 @@ impl Style {
 
 /// When printing out one coloured string followed by another, use one of
 /// these rules to figure out which *extra* control codes need to be sent.
-#[derive(PartialEq, Copy, Debug)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 enum Difference {
 
     /// Print out the control codes specified by this style to end up looking
