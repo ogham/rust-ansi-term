@@ -378,7 +378,7 @@ impl Style {
                 // Otherwise, build up an extra style based on the attributes
                 // that have to be added.
                 else {
-                    let mut style = Style::Plain;
+                    let mut style = Plain;
 
                     if c != d { style = d.unwrap().normal() }
                     if background != background2 { style = style.on(background2.unwrap()) }
@@ -387,7 +387,7 @@ impl Style {
 
                     // If *no* attributes have been added, then nothing
                     // actually needs to be changed!
-                    if let Style::Plain = style {
+                    if let Plain = style {
                         NoDifference
                     }
                     else {
