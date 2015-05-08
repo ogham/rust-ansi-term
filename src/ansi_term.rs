@@ -98,10 +98,13 @@
 //! Plain.paint("No colours here.")
 //! ```
 
+use std::fmt;
+use std::default::Default;
+
 use Colour::*;
 use Style::*;
 use Difference::*;
-use std::fmt;
+
 
 /// An ANSI String is a string coupled with the Style to display it
 /// in a terminal.
@@ -393,6 +396,12 @@ impl Style {
                 }
             },
         }
+    }
+}
+
+impl Default for Style {
+    fn default() -> Style {
+        Plain
     }
 }
 
