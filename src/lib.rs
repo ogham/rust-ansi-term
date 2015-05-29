@@ -193,9 +193,29 @@ impl Colour {
         Style { foreground: Some(self), is_bold: true, .. Style::default() }
     }
 
+    /// Returns a Style with the dimmed property set.
+    pub fn dimmed(self) -> Style {
+        Style { foreground: Some(self), is_dimmed: true, .. Style::default() }
+    }
+
     /// Returns a Style with the underline property set.
     pub fn underline(self) -> Style {
         Style { foreground: Some(self), is_underline: true, .. Style::default() }
+    }
+
+    /// Returns a Style with the blink property set.
+    pub fn blink(self) -> Style {
+        Style { foreground: Some(self), is_blink: true, .. Style::default() }
+    }
+
+    /// Returns a Style with the reverse property set.
+    pub fn reverse(self) -> Style {
+        Style { foreground: Some(self), is_reverse: true, .. Style::default() }
+    }
+
+    /// Returns a Style with the hidden property set.
+    pub fn hidden(self) -> Style {
+        Style { foreground: Some(self), is_hidden: true, .. Style::default() }
     }
 
     /// Returns a Style with the background colour property set.
@@ -211,7 +231,11 @@ pub struct Style {
     foreground: Option<Colour>,
     background: Option<Colour>,
     is_bold: bool,
-    is_underline: bool
+    is_dimmed: bool,
+    is_underline: bool,
+    is_blink: bool,
+    is_reverse: bool,
+    is_hidden: bool
 }
 
 impl Style {
@@ -225,9 +249,29 @@ impl Style {
         Style { is_bold: true, .. *self }
     }
 
+    /// Returns a Style with the dimmed property set.
+    pub fn dimmed(&self) -> Style {
+        Style { is_dimmed: true, .. *self }
+    }
+
     /// Returns a Style with the underline property set.
     pub fn underline(&self) -> Style {
         Style { is_underline: true, .. *self }
+    }
+
+    /// Returns a Style with the blink property set.
+    pub fn blink(&self) -> Style {
+        Style { is_blink: true, .. *self }
+    }
+
+    /// Returns a Style with the reverse property set.
+    pub fn reverse(&self) -> Style {
+        Style { is_reverse: true, .. *self }
+    }
+
+    /// Returns a Style with the hidden property set.
+    pub fn hidden(&self) -> Style {
+        Style { is_hidden: true, .. *self }
     }
 
     /// Returns a Style with the background colour property set.
@@ -244,9 +288,33 @@ impl Style {
             semicolon = true;
         }
 
+        if self.is_dimmed {
+            if semicolon { prefix.push(';') }
+            prefix.push('2');
+            semicolon = true;
+        }
+
         if self.is_underline {
             if semicolon { prefix.push(';') }
             prefix.push('4');
+            semicolon = true;
+        }
+
+        if self.is_blink {
+            if semicolon { prefix.push(';') }
+            prefix.push('5');
+            semicolon = true;
+        }
+
+        if self.is_reverse {
+            if semicolon { prefix.push(';') }
+            prefix.push('6');
+            semicolon = true;
+        }
+
+        if self.is_hidden {
+            if semicolon { prefix.push(';') }
+            prefix.push('7');
             semicolon = true;
         }
 
@@ -310,8 +378,24 @@ impl Style {
             return Reset;
         }
 
+        if self.is_dimmed && !next.is_dimmed {
+            return Reset;
+        }
+
         // Cannot un-underline, so must Reset.
         if self.is_underline && !next.is_underline {
+            return Reset;
+        }
+
+        if self.is_blink && !next.is_blink {
+            return Reset;
+        }
+
+        if self.is_reverse && !next.is_reverse {
+            return Reset;
+        }
+
+        if self.is_hidden && !next.is_hidden {
             return Reset;
         }
 
@@ -331,8 +415,24 @@ impl Style {
             extra_styles.is_bold = true;
         }
 
+        if self.is_dimmed != next.is_dimmed {
+            extra_styles.is_dimmed = true;
+        }
+
         if self.is_underline != next.is_underline {
             extra_styles.is_underline = true;
+        }
+
+        if self.is_blink != next.is_blink {
+            extra_styles.is_blink = true;
+        }
+
+        if self.is_reverse != next.is_reverse {
+            extra_styles.is_reverse = true;
+        }
+
+        if self.is_hidden != next.is_hidden {
+            extra_styles.is_hidden = true;
         }
 
         if self.foreground != next.foreground {
@@ -353,7 +453,11 @@ impl Default for Style {
             foreground: None,
             background: None,
             is_bold: false,
-            is_underline: false
+            is_dimmed: false,
+            is_underline: false,
+            is_blink: false,
+            is_reverse: false,
+            is_hidden: false
         }
     }
 }
@@ -413,7 +517,6 @@ impl<'a> fmt::Display for ANSIStrings<'a> {
 mod tests {
     pub use super::Style;
     pub use super::Colour::*;
-    pub use super::Difference::*;
 
     macro_rules! test {
         ($name: ident: $style: expr; $input: expr => $result: expr) => {
@@ -444,9 +547,14 @@ mod tests {
     test!(bold:                  Style::default().bold();                      "hi" => "\x1B[1mhi\x1B[0m");
     test!(underline:             Style::default().underline();                 "hi" => "\x1B[4mhi\x1B[0m");
     test!(bunderline:            Style::default().bold().underline();          "hi" => "\x1B[1;4mhi\x1B[0m");
+    test!(dimmed:                Style::default().dimmed();         "hi" => "\x1B[2mhi\x1B[0m");
+    test!(blink:                 Style::default().blink();          "hi" => "\x1B[5mhi\x1B[0m");
+    test!(reverse:               Style::default().reverse();        "hi" => "\x1B[6mhi\x1B[0m");
+    test!(hidden:                Style::default().hidden();         "hi" => "\x1B[7mhi\x1B[0m");
 
     mod difference {
-        use super::*;
+        pub use ::Difference::*;
+        pub use super::*;
 
         #[test]
         fn diff() {
@@ -474,6 +582,74 @@ mod tests {
         #[test]
         fn colour_change() {
             assert_eq!(ExtraStyles(Blue.normal()), Red.normal().difference(&Blue.normal()))
+        }
+
+        #[test]
+        fn removal_of_dimmed() {
+            let dimmed = Style::default().dimmed();
+            let normal = Style::default();
+
+            assert_eq!(Reset, dimmed.difference(&normal));
+        }
+
+        #[test]
+        fn addition_of_dimmed() {
+            let dimmed = Style::default().dimmed();
+            let normal = Style::default();
+            let extra_styles = ExtraStyles(dimmed);
+
+            assert_eq!(extra_styles, normal.difference(&dimmed));
+        }
+
+        #[test]
+        fn removal_of_blink() {
+            let blink = Style::default().blink();
+            let normal = Style::default();
+
+            assert_eq!(Reset, blink.difference(&normal));
+        }
+
+        #[test]
+        fn addition_of_blink() {
+            let blink = Style::default().blink();
+            let normal = Style::default();
+            let extra_styles = ExtraStyles(blink);
+
+            assert_eq!(extra_styles, normal.difference(&blink));
+        }
+
+        #[test]
+        fn removal_of_reverse() {
+            let reverse = Style::default().reverse();
+            let normal = Style::default();
+
+            assert_eq!(Reset, reverse.difference(&normal));
+        }
+
+        #[test]
+        fn addition_of_reverse() {
+            let reverse = Style::default().reverse();
+            let normal = Style::default();
+            let extra_styles = ExtraStyles(reverse);
+
+            assert_eq!(extra_styles, normal.difference(&reverse));
+        }
+
+        #[test]
+        fn removal_of_hidden() {
+            let hidden = Style::default().hidden();
+            let normal = Style::default();
+
+            assert_eq!(Reset, hidden.difference(&normal));
+        }
+
+        #[test]
+        fn addition_of_hidden() {
+            let hidden = Style::default().hidden();
+            let normal = Style::default();
+            let extra_styles = ExtraStyles(hidden);
+
+            assert_eq!(extra_styles, normal.difference(&hidden));
         }
     }
 }
