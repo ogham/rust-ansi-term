@@ -2,7 +2,7 @@
 name = "ansi_term"
 description = "Library for ANSI terminal colours and styles (bold, underline)"
 
-authors = [ "ogham@bsago.me" ]
+authors = [ "ogham@bsago.me", "Ryan Scheel (Havvy) <ryan.havvy@gmail.com>" ]
 documentation = "http://bsago.me/doc/ansi_term/"
 homepage = "https://github.com/ogham/rust-ansi-term"
 license = "MIT"

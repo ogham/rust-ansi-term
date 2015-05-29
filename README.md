@@ -106,9 +106,9 @@ Fixed(221).on(Fixed(124)).paint("Mustard in the ketchup.")
 
 ## No Formatting
 
-Finally, for the sake of completeness, the Plain style provides
+Finally, for the sake of completeness, the default style provides
 neither colours nor formatting.
 
 ```rust
-Plain.paint("No colours here.")
+Style::default().paint("No colours here.")
 ```
