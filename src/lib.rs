@@ -193,6 +193,11 @@ impl Colour {
         Style { foreground: Some(self), is_bold: true, .. Style::default() }
     }
 
+    /// Returns a Style with the dimmed property set.
+    pub fn dimmed(self) -> Style {
+        Style { foreground: Some(self), is_dimmed: true, .. Style::default() }
+    }
+
     /// Returns a Style with the underline property set.
     pub fn underline(self) -> Style {
         Style { foreground: Some(self), is_underline: true, .. Style::default() }
@@ -211,6 +216,7 @@ pub struct Style {
     foreground: Option<Colour>,
     background: Option<Colour>,
     is_bold: bool,
+    is_dimmed: bool,
     is_underline: bool
 }
 
@@ -223,6 +229,11 @@ impl Style {
     /// Returns a Style with the bold property set.
     pub fn bold(&self) -> Style {
         Style { is_bold: true, .. *self }
+    }
+
+    /// Returns a Style with the dimmed property set.
+    pub fn dimmed(&self) -> Style {
+        Style { is_dimmed: true, .. *self }
     }
 
     /// Returns a Style with the underline property set.
@@ -241,6 +252,12 @@ impl Style {
 
         if self.is_bold {
             prefix.push('1');
+            semicolon = true;
+        }
+
+        if self.is_dimmed {
+            if semicolon { prefix.push(';') }
+            prefix.push('2');
             semicolon = true;
         }
 
@@ -310,6 +327,10 @@ impl Style {
             return Reset;
         }
 
+        if self.is_dimmed && !next.is_dimmed {
+            return Reset;
+        }
+
         // Cannot un-underline, so must Reset.
         if self.is_underline && !next.is_underline {
             return Reset;
@@ -329,6 +350,10 @@ impl Style {
 
         if self.is_bold != next.is_bold {
             extra_styles.is_bold = true;
+        }
+
+        if self.is_dimmed != next.is_dimmed {
+            extra_styles.is_dimmed = true;
         }
 
         if self.is_underline != next.is_underline {
@@ -353,6 +378,7 @@ impl Default for Style {
             foreground: None,
             background: None,
             is_bold: false,
+            is_dimmed: false,
             is_underline: false
         }
     }
@@ -413,7 +439,6 @@ impl<'a> fmt::Display for ANSIStrings<'a> {
 mod tests {
     pub use super::Style;
     pub use super::Colour::*;
-    pub use super::Difference::*;
 
     macro_rules! test {
         ($name: ident: $style: expr; $input: expr => $result: expr) => {
@@ -444,9 +469,11 @@ mod tests {
     test!(bold:                  Style::default().bold();                      "hi" => "\x1B[1mhi\x1B[0m");
     test!(underline:             Style::default().underline();                 "hi" => "\x1B[4mhi\x1B[0m");
     test!(bunderline:            Style::default().bold().underline();          "hi" => "\x1B[1;4mhi\x1B[0m");
+    test!(dimmed:                Style::default().dimmed();         "hi" => "\x1B[2mhi\x1B[0m");
 
     mod difference {
-        use super::*;
+        pub use ::Difference::*;
+        pub use super::*;
 
         #[test]
         fn diff() {
@@ -474,6 +501,23 @@ mod tests {
         #[test]
         fn colour_change() {
             assert_eq!(ExtraStyles(Blue.normal()), Red.normal().difference(&Blue.normal()))
+        }
+
+        #[test]
+        fn removal_of_dimmed() {
+            let dimmed = Style::default().dimmed();
+            let normal = Style::default();
+
+            assert_eq!(Reset, dimmed.difference(&normal));
+        }
+
+        #[test]
+        fn addition_of_dimmed() {
+            let dimmed = Style::default().dimmed();
+            let normal = Style::default();
+            let extra_styles = ExtraStyles(dimmed);
+
+            assert_eq!(extra_styles, normal.difference(&dimmed));
         }
     }
 }
