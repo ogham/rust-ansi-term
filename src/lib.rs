@@ -8,7 +8,7 @@
 //! ```rust
 //! extern crate ansi_term;
 //! use ansi_term::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
-//! use ansi_term::Style::Plain;
+//! use ansi_term::Style;
 //! ```
 //!
 //! Simple Colours
@@ -91,18 +91,17 @@
 //! No Formatting
 //! -------------
 //!
-//! Finally, for the sake of completeness, the Plain style provides
+//! Finally, for the sake of completeness, the default style provides
 //! neither colours nor formatting.
 //!
 //! ```rust
-//! Plain.paint("No colours here.")
+//! Style::default().paint("No colours here.")
 //! ```
 
 use std::fmt;
 use std::default::Default;
 
 use Colour::*;
-use Style::*;
 use Difference::*;
 
 
@@ -149,77 +148,70 @@ pub enum Colour {
 // Only *after* they'd installed it.
 
 impl Colour {
-    fn write_foreground_code(self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Black  => f.write_str("30"),
-            Red    => f.write_str("31"),
-            Green  => f.write_str("32"),
-            Yellow => f.write_str("33"),
-            Blue   => f.write_str("34"),
-            Purple => f.write_str("35"),
-            Cyan   => f.write_str("36"),
-            White  => f.write_str("37"),
-            Fixed(num) => write!(f, "38;5;{}", num),
+    fn foreground_code(&self) -> String {
+        match *self {
+            Black  => "30".to_string(),
+            Red    => "31".to_string(),
+            Green  => "32".to_string(),
+            Yellow => "33".to_string(),
+            Blue   => "34".to_string(),
+            Purple => "35".to_string(),
+            Cyan   => "36".to_string(),
+            White  => "37".to_string(),
+            Fixed(num) => format!("38;5;{}", &num),
         }
     }
 
-    fn write_background_code(self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Black  => f.write_str("40"),
-            Red    => f.write_str("41"),
-            Green  => f.write_str("42"),
-            Yellow => f.write_str("43"),
-            Blue   => f.write_str("44"),
-            Purple => f.write_str("45"),
-            Cyan   => f.write_str("46"),
-            White  => f.write_str("47"),
-            Fixed(num) => write!(f, "48;5;{}", num),
+    fn background_code(&self) -> String {
+        match *self {
+            Black  => "40".to_string(),
+            Red    => "41".to_string(),
+            Green  => "42".to_string(),
+            Yellow => "43".to_string(),
+            Blue   => "44".to_string(),
+            Purple => "45".to_string(),
+            Cyan   => "46".to_string(),
+            White  => "47".to_string(),
+            Fixed(num) => format!("48;5;{}", &num),
         }
     }
 
     /// Return a Style with the foreground colour set to this colour.
-    pub fn normal(self) -> Style {
-        Styled { foreground: Some(self), background: None, bold: false, underline: false }
+    pub fn normal(self) -> Style { 
+        Style { foreground: Some(self), .. Style::default() }
     }
 
     /// Paints the given text with this colour, returning an ANSI string.
     /// This is a short-cut so you don't have to use Blue.normal() just
     /// to get blue text.
     pub fn paint(self, input: &str) -> ANSIString {
-        ANSIString::new(input, Foreground(self))
-    }
-
-    /// Returns a Style with the underline property set.
-    pub fn underline(self) -> Style {
-        Styled { foreground: Some(self), background: None, bold: false, underline: true }
+        ANSIString::new(input, self.normal())
     }
 
     /// Returns a Style with the bold property set.
     pub fn bold(self) -> Style {
-        Styled { foreground: Some(self), background: None, bold: true, underline: false }
+        Style { foreground: Some(self), is_bold: true, .. Style::default() }
+    }
+
+    /// Returns a Style with the underline property set.
+    pub fn underline(self) -> Style {
+        Style { foreground: Some(self), is_underline: true, .. Style::default() }
     }
 
     /// Returns a Style with the background colour property set.
     pub fn on(self, background: Colour) -> Style {
-        Styled { foreground: Some(self), background: Some(background), bold: false, underline: false }
+        Style { foreground: Some(self), background: Some(background), .. Style::default() }
     }
 }
 
 /// A style is a collection of properties that can format a string
 /// using ANSI escape codes.
 #[derive(PartialEq, Clone, Copy, Debug)]
-pub enum Style {
-
-    /// The Plain style provides no formatting.
-    Plain,
-
-    /// The Foreground style provides just a foreground colour.
-    Foreground(Colour),
-
-    /// The Styled style is a catch-all for anything more complicated
-    /// than that. It's technically possible for there to be other
-    /// cases, such as "bold foreground", but probably isn't worth it.
-    Styled { foreground: Option<Colour>, background: Option<Colour>, bold: bool, underline: bool },
+pub struct Style {
+    foreground: Option<Colour>,
+    background: Option<Colour>,
+    is_bold: bool,
+    is_underline: bool
 }
 
 impl Style {
@@ -229,78 +221,64 @@ impl Style {
     }
 
     /// Returns a Style with the bold property set.
-    pub fn bold(self) -> Style {
-        match self {
-            Plain => Styled { foreground: None, background: None, bold: true, underline: false },
-            Foreground(c) => Styled { foreground: Some(c), background: None, bold: true, underline: false },
-            Styled { foreground, background, bold: _, underline } => Styled { foreground: foreground, background: background, bold: true, underline: underline },
-        }
+    pub fn bold(&self) -> Style {
+        Style { is_bold: true, .. *self }
     }
 
     /// Returns a Style with the underline property set.
-    pub fn underline(self) -> Style {
-        match self {
-            Plain => Styled { foreground: None, background: None, bold: false, underline: true },
-            Foreground(c) => Styled { foreground: Some(c), background: None, bold: false, underline: true },
-            Styled { foreground, background, bold, underline: _ } => Styled { foreground: foreground, background: background, bold: bold, underline: true },
-        }
+    pub fn underline(&self) -> Style {
+        Style { is_underline: true, .. *self }
     }
 
     /// Returns a Style with the background colour property set.
-    pub fn on(self, background: Colour) -> Style {
-        match self {
-            Plain => Styled { foreground: None, background: Some(background), bold: false, underline: false },
-            Foreground(c) => Styled { foreground: Some(c), background: Some(background), bold: false, underline: false },
-            Styled { foreground, background: _, bold, underline } => Styled { foreground: foreground, background: Some(background), bold: bold, underline: underline },
+    pub fn on(&self, background: Colour) -> Style {
+        Style { background: Some(background), .. *self }
+    }
+
+    fn prefix(&self) -> String {
+        let mut prefix = String::new();
+        let mut semicolon = false;
+
+        if self.is_bold {
+            prefix.push('1');
+            semicolon = true;
         }
-   }
 
-   fn write_prefix(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Plain => Ok(()),
-            Foreground(colour) => {
-                try!(f.write_str("\x1B["));
-                try!(colour.write_foreground_code(f));
-                write!(f, "m")
-            },
-            Styled { foreground, background, bold, underline } => {
-                let mut semicolon = false;
-                try!(f.write_str("\x1B["));
+        if self.is_underline {
+            if semicolon { prefix.push(';') }
+            prefix.push('4');
+            semicolon = true;
+        }
 
-                if bold {
-                    try!(f.write_str("1"));
-                    semicolon = true;
-                }
+        if let Some(bg) = self.background {
+            if semicolon { prefix.push(';'); }
+            prefix.push_str(&bg.background_code());
+            semicolon = true;
+        }
 
-                if underline {
-                    if semicolon { try!(f.write_str(";")); }
-                    try!(f.write_str("4"));
-                    semicolon = true;
-                }
+        if let Some(fg) = self.foreground {
+            if semicolon { prefix.push(';'); }
+            prefix.push_str(&fg.foreground_code());
+        }
 
-                match background {
-                    Some(c) => {
-                        if semicolon { try!(f.write_str(";")); }
-                        try!(c.write_background_code(f));
-                        semicolon = true;
-                    },
-                    None => {},
-                }
-
-                if let Some(fg) = foreground {
-                    if semicolon { try!(f.write_str(";")); }
-                    try!(fg.write_foreground_code(f));
-                }
-
-                write!(f, "m")
-            },
+        if prefix.len() != 0 {
+            prefix = "\x1B[".to_string() + &prefix;
+            prefix.push('m');
+            prefix
+        } else {
+            prefix
         }
     }
 
+    fn write_prefix(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.prefix())
+    }
+
     fn write_suffix(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Plain => Ok(()),
-            _     => write!(f, "\x1B[0m"),
+        if self == &Style::default() { 
+            write!(f, "")
+        } else {
+            write!(f, "\x1B[0m")
         }
     }
 
@@ -318,90 +296,65 @@ impl Style {
     /// without also removing the underline property. So when this has to
     /// happen, this function returns None, meaning that the entire set of
     /// styles should be reset and begun again.
-    fn difference(&self, next_style: Style) -> Difference {
-        match (*self, next_style) {
+    fn difference(&self, next: &Style) -> Difference {
+        // XXX(Havvy): This algorithm is kind of hard to replicate without
+        // having the Plain/Foreground enum variants, so I'm just leaving
+        // it commented out for now, and defaulting to Reset.
 
-            // Nothing into nothing, carry the nothing - still nothing...
-            (Plain, Plain) => NoDifference,
-
-            // When coming from no style at all, *any* style will just require
-            // the same formatting characters as it normally would.
-            (Plain, _) => ExtraStyles(next_style),
-
-            // Similarly, going *to* no style at all can't be done other than
-            // with a reset command, so that's what gets sent.
-            (Foreground(_), Plain) => Reset,
-
-            // Converting between two foreground colours only requires extra
-            // styles if the colours are actually different.
-            (Foreground(c), Foreground(d)) if c == d => NoDifference,
-            (Foreground(_), Foreground(d))           => ExtraStyles(Foreground(d)),
-
-            // Adding styles to just a foreground colour requires
-            (Foreground(c), Styled { foreground: d, background, bold, underline }) => {
-                if d == Some(c) {
-                    ExtraStyles(Styled { foreground: None, background: background, bold: bold, underline: underline })
-                }
-                else {
-                    ExtraStyles(next_style)
-                }
-            },
-
-            // There's no way to go from *any style at all* to no styles at
-            // all, so just Reset. Except if the Styled struct happens to be
-            // entirely empty, but this can't happen using this library's
-            // current logic.
-            (Styled { foreground: _, background: _, bold: _, underline: _ }, Plain) => Reset,
-
-            // A style with attributes will usually need to be reset, unless
-            // none of them is actually present, in which case it comes down
-            // to comparing the foreground colours as before.
-            (Styled { foreground, background, bold, underline }, Foreground(c)) => {
-                if background.is_some() || bold || underline {
-                    Reset
-                }
-                else if foreground == Some(c) {
-                    NoDifference
-                }
-                else {
-                    ExtraStyles(Foreground(c))
-                }
-            },
-
-            (Styled { foreground: c, background, bold, underline }, Styled { foreground: d, background: background2, bold: bold2, underline: underline2 }) => {
-                // If any of the attributes need to be reset, then the whole
-                // thing needs to be reset.
-                if (background.is_some() && background2.is_none()) || (bold && !bold2) || (underline && !underline2) {
-                    Reset
-                }
-
-                // Otherwise, build up an extra style based on the attributes
-                // that have to be added.
-                else {
-                    let mut style = Plain;
-
-                    if c != d { style = d.unwrap().normal() }
-                    if background != background2 { style = style.on(background2.unwrap()) }
-                    if bold != bold2 { style = style.bold() }
-                    if underline != underline2 { style = style.underline() }
-
-                    // If *no* attributes have been added, then nothing
-                    // actually needs to be changed!
-                    if let Plain = style {
-                        NoDifference
-                    }
-                    else {
-                        ExtraStyles(style)
-                    }
-                }
-            },
+        if self == next {
+            return NoDifference;
         }
+
+        // Cannot un-bold, so must Reset.
+        if self.is_bold && !next.is_bold {
+            return Reset;
+        }
+
+        // Cannot un-underline, so must Reset.
+        if self.is_underline && !next.is_underline {
+            return Reset;
+        }
+
+        // Cannot go from foreground to no foreground, so must Reset.
+        if self.foreground.is_some() && next.foreground.is_none() {
+            return Reset;
+        }
+
+        // Cannot go from background to no background, so must Reset.
+        if self.background.is_some() && next.background.is_none() {
+            return Reset;
+        }
+
+        let mut extra_styles = Style::default();
+
+        if self.is_bold != next.is_bold {
+            extra_styles.is_bold = true;
+        }
+
+        if self.is_underline != next.is_underline {
+            extra_styles.is_underline = true;
+        }
+
+        if self.foreground != next.foreground {
+            extra_styles.foreground = next.foreground;
+        }
+
+        if self.background != next.background {
+            extra_styles.background = next.background;
+        }
+
+        ExtraStyles(extra_styles)
     }
 }
 
 impl Default for Style {
     fn default() -> Style {
-        Plain
+        Style {
+            foreground: None,
+            background: None,
+            is_bold: false,
+            is_underline: false
+        }
     }
 }
 
@@ -438,7 +391,7 @@ impl<'a> fmt::Display for ANSIStrings<'a> {
 	    try!(write!(f, "{}", first.string));
 
 	    for window in self.0.windows(2) {
-	        match window[0].style.difference(window[1].style) {
+	        match window[0].style.difference(&window[1].style) {
 	            ExtraStyles(style) => try!(style.write_prefix(f)),
 	            Reset => {
                     try!(f.write_str("\x1B[0m"));
@@ -458,7 +411,7 @@ impl<'a> fmt::Display for ANSIStrings<'a> {
 
 #[cfg(test)]
 mod tests {
-    pub use super::Style::*;
+    pub use super::Style;
     pub use super::Colour::*;
     pub use super::Difference::*;
 
@@ -471,7 +424,7 @@ mod tests {
         };
     }
 
-    test!(plain:                 Plain;                             "text/plain" => "text/plain");
+    test!(plain:                 Style::default();                  "text/plain" => "text/plain");
     test!(red:                   Red;                               "hi" => "\x1B[31mhi\x1B[0m");
     test!(black:                 Black.normal();                    "hi" => "\x1B[30mhi\x1B[0m");
     test!(yellow_bold:           Yellow.bold();                     "hi" => "\x1B[1;33mhi\x1B[0m");
@@ -488,39 +441,39 @@ mod tests {
     test!(fixed:                 Fixed(100);                        "hi" => "\x1B[38;5;100mhi\x1B[0m");
     test!(fixed_on_purple:       Fixed(100).on(Purple);             "hi" => "\x1B[45;38;5;100mhi\x1B[0m");
     test!(fixed_on_fixed:        Fixed(100).on(Fixed(200));         "hi" => "\x1B[48;5;200;38;5;100mhi\x1B[0m");
-    test!(bold:                  Plain.bold();                      "hi" => "\x1B[1mhi\x1B[0m");
-    test!(underline:             Plain.underline();                 "hi" => "\x1B[4mhi\x1B[0m");
-    test!(bunderline:            Plain.bold().underline();          "hi" => "\x1B[1;4mhi\x1B[0m");
+    test!(bold:                  Style::default().bold();                      "hi" => "\x1B[1mhi\x1B[0m");
+    test!(underline:             Style::default().underline();                 "hi" => "\x1B[4mhi\x1B[0m");
+    test!(bunderline:            Style::default().bold().underline();          "hi" => "\x1B[1;4mhi\x1B[0m");
 
     mod difference {
         use super::*;
 
         #[test]
         fn diff() {
-            let expected = ExtraStyles(Plain.bold());
-            let got = Green.normal().difference(Green.bold());
+            let expected = ExtraStyles(Style::default().bold());
+            let got = Green.normal().difference(&Green.bold());
             assert_eq!(expected, got)
         }
 
         #[test]
         fn dlb() {
-            let got = Green.bold().difference(Green.normal());
+            let got = Green.bold().difference(&Green.normal());
             assert_eq!(Reset, got)
         }
 
         #[test]
         fn nothing() {
-            assert_eq!(NoDifference, Green.bold().difference(Green.bold()));
+            assert_eq!(NoDifference, Green.bold().difference(&Green.bold()));
         }
 
         #[test]
         fn nothing_2() {
-            assert_eq!(NoDifference, Green.normal().difference(Green.normal()));
+            assert_eq!(NoDifference, Green.normal().difference(&Green.normal()));
         }
 
         #[test]
         fn colour_change() {
-            assert_eq!(ExtraStyles(Blue.normal()), Red.normal().difference(Blue.normal()))
+            assert_eq!(ExtraStyles(Blue.normal()), Red.normal().difference(&Blue.normal()))
         }
     }
 }
