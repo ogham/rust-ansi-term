@@ -239,6 +239,11 @@ pub struct Style {
 }
 
 impl Style {
+    /// Creates a new Style with no differences.
+    pub fn new() -> Style {
+        Style::default()
+    }
+
     /// Paints the given text with this colour, returning an ANSI string.
     pub fn paint(self, input: &str) -> ANSIString {
         ANSIString::new(input, self)
@@ -544,13 +549,13 @@ mod tests {
     test!(fixed:                 Fixed(100);                        "hi" => "\x1B[38;5;100mhi\x1B[0m");
     test!(fixed_on_purple:       Fixed(100).on(Purple);             "hi" => "\x1B[45;38;5;100mhi\x1B[0m");
     test!(fixed_on_fixed:        Fixed(100).on(Fixed(200));         "hi" => "\x1B[48;5;200;38;5;100mhi\x1B[0m");
-    test!(bold:                  Style::default().bold();                      "hi" => "\x1B[1mhi\x1B[0m");
-    test!(underline:             Style::default().underline();                 "hi" => "\x1B[4mhi\x1B[0m");
-    test!(bunderline:            Style::default().bold().underline();          "hi" => "\x1B[1;4mhi\x1B[0m");
-    test!(dimmed:                Style::default().dimmed();         "hi" => "\x1B[2mhi\x1B[0m");
-    test!(blink:                 Style::default().blink();          "hi" => "\x1B[5mhi\x1B[0m");
-    test!(reverse:               Style::default().reverse();        "hi" => "\x1B[6mhi\x1B[0m");
-    test!(hidden:                Style::default().hidden();         "hi" => "\x1B[7mhi\x1B[0m");
+    test!(bold:                  Style::new().bold();               "hi" => "\x1B[1mhi\x1B[0m");
+    test!(underline:             Style::new().underline();          "hi" => "\x1B[4mhi\x1B[0m");
+    test!(bunderline:            Style::new().bold().underline();   "hi" => "\x1B[1;4mhi\x1B[0m");
+    test!(dimmed:                Style::new().dimmed();             "hi" => "\x1B[2mhi\x1B[0m");
+    test!(blink:                 Style::new().blink();              "hi" => "\x1B[5mhi\x1B[0m");
+    test!(reverse:               Style::new().reverse();            "hi" => "\x1B[6mhi\x1B[0m");
+    test!(hidden:                Style::new().hidden();             "hi" => "\x1B[7mhi\x1B[0m");
 
     mod difference {
         pub use ::Difference::*;
@@ -558,7 +563,7 @@ mod tests {
 
         #[test]
         fn diff() {
-            let expected = ExtraStyles(Style::default().bold());
+            let expected = ExtraStyles(Style::new().bold());
             let got = Green.normal().difference(&Green.bold());
             assert_eq!(expected, got)
         }
@@ -586,7 +591,7 @@ mod tests {
 
         #[test]
         fn removal_of_dimmed() {
-            let dimmed = Style::default().dimmed();
+            let dimmed = Style::new().dimmed();
             let normal = Style::default();
 
             assert_eq!(Reset, dimmed.difference(&normal));
@@ -594,7 +599,7 @@ mod tests {
 
         #[test]
         fn addition_of_dimmed() {
-            let dimmed = Style::default().dimmed();
+            let dimmed = Style::new().dimmed();
             let normal = Style::default();
             let extra_styles = ExtraStyles(dimmed);
 
@@ -603,7 +608,7 @@ mod tests {
 
         #[test]
         fn removal_of_blink() {
-            let blink = Style::default().blink();
+            let blink = Style::new().blink();
             let normal = Style::default();
 
             assert_eq!(Reset, blink.difference(&normal));
@@ -611,7 +616,7 @@ mod tests {
 
         #[test]
         fn addition_of_blink() {
-            let blink = Style::default().blink();
+            let blink = Style::new().blink();
             let normal = Style::default();
             let extra_styles = ExtraStyles(blink);
 
@@ -620,7 +625,7 @@ mod tests {
 
         #[test]
         fn removal_of_reverse() {
-            let reverse = Style::default().reverse();
+            let reverse = Style::new().reverse();
             let normal = Style::default();
 
             assert_eq!(Reset, reverse.difference(&normal));
@@ -628,7 +633,7 @@ mod tests {
 
         #[test]
         fn addition_of_reverse() {
-            let reverse = Style::default().reverse();
+            let reverse = Style::new().reverse();
             let normal = Style::default();
             let extra_styles = ExtraStyles(reverse);
 
@@ -637,7 +642,7 @@ mod tests {
 
         #[test]
         fn removal_of_hidden() {
-            let hidden = Style::default().hidden();
+            let hidden = Style::new().hidden();
             let normal = Style::default();
 
             assert_eq!(Reset, hidden.difference(&normal));
@@ -645,7 +650,7 @@ mod tests {
 
         #[test]
         fn addition_of_hidden() {
-            let hidden = Style::default().hidden();
+            let hidden = Style::new().hidden();
             let normal = Style::default();
             let extra_styles = ExtraStyles(hidden);
 
