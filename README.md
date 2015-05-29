@@ -23,7 +23,7 @@ git = "https://github.com/ogham/rust-ansi-term.git"
 ```rust
 extern crate ansi_term;
 use ansi_term::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
-use ansi_term::Style::Plain;
+use ansi_term::Style;
 ```
 
 
