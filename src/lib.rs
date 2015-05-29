@@ -203,6 +203,21 @@ impl Colour {
         Style { foreground: Some(self), is_underline: true, .. Style::default() }
     }
 
+    /// Returns a Style with the blink property set.
+    pub fn blink(self) -> Style {
+        Style { foreground: Some(self), is_blink: true, .. Style::default() }
+    }
+
+    /// Returns a Style with the reverse property set.
+    pub fn reverse(self) -> Style {
+        Style { foreground: Some(self), is_reverse: true, .. Style::default() }
+    }
+
+    /// Returns a Style with the hidden property set.
+    pub fn hidden(self) -> Style {
+        Style { foreground: Some(self), is_hidden: true, .. Style::default() }
+    }
+
     /// Returns a Style with the background colour property set.
     pub fn on(self, background: Colour) -> Style {
         Style { foreground: Some(self), background: Some(background), .. Style::default() }
@@ -217,7 +232,10 @@ pub struct Style {
     background: Option<Colour>,
     is_bold: bool,
     is_dimmed: bool,
-    is_underline: bool
+    is_underline: bool,
+    is_blink: bool,
+    is_reverse: bool,
+    is_hidden: bool
 }
 
 impl Style {
@@ -239,6 +257,21 @@ impl Style {
     /// Returns a Style with the underline property set.
     pub fn underline(&self) -> Style {
         Style { is_underline: true, .. *self }
+    }
+
+    /// Returns a Style with the blink property set.
+    pub fn blink(&self) -> Style {
+        Style { is_blink: true, .. *self }
+    }
+
+    /// Returns a Style with the reverse property set.
+    pub fn reverse(&self) -> Style {
+        Style { is_reverse: true, .. *self }
+    }
+
+    /// Returns a Style with the hidden property set.
+    pub fn hidden(&self) -> Style {
+        Style { is_hidden: true, .. *self }
     }
 
     /// Returns a Style with the background colour property set.
@@ -264,6 +297,24 @@ impl Style {
         if self.is_underline {
             if semicolon { prefix.push(';') }
             prefix.push('4');
+            semicolon = true;
+        }
+
+        if self.is_blink {
+            if semicolon { prefix.push(';') }
+            prefix.push('5');
+            semicolon = true;
+        }
+
+        if self.is_reverse {
+            if semicolon { prefix.push(';') }
+            prefix.push('6');
+            semicolon = true;
+        }
+
+        if self.is_hidden {
+            if semicolon { prefix.push(';') }
+            prefix.push('7');
             semicolon = true;
         }
 
@@ -336,6 +387,18 @@ impl Style {
             return Reset;
         }
 
+        if self.is_blink && !next.is_blink {
+            return Reset;
+        }
+
+        if self.is_reverse && !next.is_reverse {
+            return Reset;
+        }
+
+        if self.is_hidden && !next.is_hidden {
+            return Reset;
+        }
+
         // Cannot go from foreground to no foreground, so must Reset.
         if self.foreground.is_some() && next.foreground.is_none() {
             return Reset;
@@ -360,6 +423,18 @@ impl Style {
             extra_styles.is_underline = true;
         }
 
+        if self.is_blink != next.is_blink {
+            extra_styles.is_blink = true;
+        }
+
+        if self.is_reverse != next.is_reverse {
+            extra_styles.is_reverse = true;
+        }
+
+        if self.is_hidden != next.is_hidden {
+            extra_styles.is_hidden = true;
+        }
+
         if self.foreground != next.foreground {
             extra_styles.foreground = next.foreground;
         }
@@ -379,7 +454,10 @@ impl Default for Style {
             background: None,
             is_bold: false,
             is_dimmed: false,
-            is_underline: false
+            is_underline: false,
+            is_blink: false,
+            is_reverse: false,
+            is_hidden: false
         }
     }
 }
@@ -470,6 +548,9 @@ mod tests {
     test!(underline:             Style::default().underline();                 "hi" => "\x1B[4mhi\x1B[0m");
     test!(bunderline:            Style::default().bold().underline();          "hi" => "\x1B[1;4mhi\x1B[0m");
     test!(dimmed:                Style::default().dimmed();         "hi" => "\x1B[2mhi\x1B[0m");
+    test!(blink:                 Style::default().blink();          "hi" => "\x1B[5mhi\x1B[0m");
+    test!(reverse:               Style::default().reverse();        "hi" => "\x1B[6mhi\x1B[0m");
+    test!(hidden:                Style::default().hidden();         "hi" => "\x1B[7mhi\x1B[0m");
 
     mod difference {
         pub use ::Difference::*;
@@ -518,6 +599,57 @@ mod tests {
             let extra_styles = ExtraStyles(dimmed);
 
             assert_eq!(extra_styles, normal.difference(&dimmed));
+        }
+
+        #[test]
+        fn removal_of_blink() {
+            let blink = Style::default().blink();
+            let normal = Style::default();
+
+            assert_eq!(Reset, blink.difference(&normal));
+        }
+
+        #[test]
+        fn addition_of_blink() {
+            let blink = Style::default().blink();
+            let normal = Style::default();
+            let extra_styles = ExtraStyles(blink);
+
+            assert_eq!(extra_styles, normal.difference(&blink));
+        }
+
+        #[test]
+        fn removal_of_reverse() {
+            let reverse = Style::default().reverse();
+            let normal = Style::default();
+
+            assert_eq!(Reset, reverse.difference(&normal));
+        }
+
+        #[test]
+        fn addition_of_reverse() {
+            let reverse = Style::default().reverse();
+            let normal = Style::default();
+            let extra_styles = ExtraStyles(reverse);
+
+            assert_eq!(extra_styles, normal.difference(&reverse));
+        }
+
+        #[test]
+        fn removal_of_hidden() {
+            let hidden = Style::default().hidden();
+            let normal = Style::default();
+
+            assert_eq!(Reset, hidden.difference(&normal));
+        }
+
+        #[test]
+        fn addition_of_hidden() {
+            let hidden = Style::default().hidden();
+            let normal = Style::default();
+            let extra_styles = ExtraStyles(hidden);
+
+            assert_eq!(extra_styles, normal.difference(&hidden));
         }
     }
 }
