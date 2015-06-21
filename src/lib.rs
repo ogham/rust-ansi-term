@@ -177,7 +177,7 @@ impl Colour {
     }
 
     /// Return a Style with the foreground colour set to this colour.
-    pub fn normal(self) -> Style { 
+    pub fn normal(self) -> Style {
         Style { foreground: Some(self), .. Style::default() }
     }
 
@@ -348,7 +348,7 @@ impl Style {
     }
 
     fn write_suffix(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self == &Style::default() { 
+        if self == &Style::default() {
             write!(f, "")
         } else {
             write!(f, "\x1B[0m")
@@ -450,6 +450,12 @@ impl Style {
 
         ExtraStyles(extra_styles)
     }
+
+    /// Return true if this `Style` has no actual styles, and can be written
+    /// without any control characters.
+    fn is_plain(self) -> bool {
+        self == Style::default()
+    }
 }
 
 impl Default for Style {
@@ -512,7 +518,14 @@ impl<'a> fmt::Display for ANSIStrings<'a> {
             try!(write!(f, "{}", window[1].string));
 	    }
 
-	    try!(f.write_str("\x1B[0m"));
+        // Write the final reset string after all of the ANSIStrings have been
+        // written, *except* if the last one has no styles, because it would
+        // have already been written by this point.
+        if let Some(last) = self.0.last() {
+            if !last.style.is_plain() {
+                try!(f.write_str("\x1B[0m"));
+            }
+        }
 
 	    Ok(())
 	}
@@ -522,6 +535,7 @@ impl<'a> fmt::Display for ANSIStrings<'a> {
 mod tests {
     pub use super::Style;
     pub use super::Colour::*;
+    pub use super::ANSIStrings;
 
     macro_rules! test {
         ($name: ident: $style: expr; $input: expr => $result: expr) => {
@@ -655,6 +669,14 @@ mod tests {
             let extra_styles = ExtraStyles(hidden);
 
             assert_eq!(extra_styles, normal.difference(&hidden));
+        }
+
+        #[test]
+        fn no_control_codes_for_plain() {
+            let one = Style::default().paint("one");
+            let two = Style::default().paint("two");
+            let output = format!("{}", ANSIStrings( &[ one, two ] ));
+            assert_eq!(&*output, "onetwo");
         }
     }
 }
