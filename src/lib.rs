@@ -198,6 +198,11 @@ impl Colour {
         Style { foreground: Some(self), is_dimmed: true, .. Style::default() }
     }
 
+    /// Returns a Style with the italic property set.
+    pub fn italic(self) -> Style {
+        Style { foreground: Some(self), is_italic: true, .. Style::default() }
+    }
+
     /// Returns a Style with the underline property set.
     pub fn underline(self) -> Style {
         Style { foreground: Some(self), is_underline: true, .. Style::default() }
@@ -232,6 +237,7 @@ pub struct Style {
     background: Option<Colour>,
     is_bold: bool,
     is_dimmed: bool,
+    is_italic: bool,
     is_underline: bool,
     is_blink: bool,
     is_reverse: bool,
@@ -257,6 +263,11 @@ impl Style {
     /// Returns a Style with the dimmed property set.
     pub fn dimmed(&self) -> Style {
         Style { is_dimmed: true, .. *self }
+    }
+
+    /// Returns a Style with the italic property set.
+    pub fn italic(&self) -> Style {
+        Style { is_italic: true, .. *self }
     }
 
     /// Returns a Style with the underline property set.
@@ -296,6 +307,12 @@ impl Style {
         if self.is_dimmed {
             if semicolon { prefix.push(';') }
             prefix.push('2');
+            semicolon = true;
+        }
+
+        if self.is_italic {
+            if semicolon { prefix.push(';') }
+            prefix.push('3');
             semicolon = true;
         }
 
@@ -387,6 +404,10 @@ impl Style {
             return Reset;
         }
 
+        if self.is_italic && !next.is_italic {
+            return Reset;
+        }
+
         // Cannot un-underline, so must Reset.
         if self.is_underline && !next.is_underline {
             return Reset;
@@ -422,6 +443,10 @@ impl Style {
 
         if self.is_dimmed != next.is_dimmed {
             extra_styles.is_dimmed = true;
+        }
+
+        if self.is_italic != next.is_italic {
+            extra_styles.is_italic = true;
         }
 
         if self.is_underline != next.is_underline {
@@ -465,6 +490,7 @@ impl Default for Style {
             background: None,
             is_bold: false,
             is_dimmed: false,
+            is_italic: false,
             is_underline: false,
             is_blink: false,
             is_reverse: false,
@@ -567,6 +593,7 @@ mod tests {
     test!(underline:             Style::new().underline();          "hi" => "\x1B[4mhi\x1B[0m");
     test!(bunderline:            Style::new().bold().underline();   "hi" => "\x1B[1;4mhi\x1B[0m");
     test!(dimmed:                Style::new().dimmed();             "hi" => "\x1B[2mhi\x1B[0m");
+    test!(italic:                Style::new().italic();             "hi" => "\x1B[3mhi\x1B[0m");
     test!(blink:                 Style::new().blink();              "hi" => "\x1B[5mhi\x1B[0m");
     test!(reverse:               Style::new().reverse();            "hi" => "\x1B[6mhi\x1B[0m");
     test!(hidden:                Style::new().hidden();             "hi" => "\x1B[7mhi\x1B[0m");
