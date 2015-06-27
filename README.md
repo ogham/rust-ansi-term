@@ -9,8 +9,14 @@ bold text or blue underlined text, on ANSI terminals.
 ## Installation
 
 It uses [Cargo](http://crates.io/), Rust's package manager. You can
-depend on this library by adding this Git repository to your Cargo
-dependencies:
+depend on this library by adding `ansi_term` to your Cargo dependencies:
+
+```toml
+[dependencies]
+ansi_term = "*"
+```
+
+Or, to use the Git repo directly:
 
 ```toml
 [dependencies.ansi_term]
