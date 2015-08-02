@@ -3,7 +3,7 @@
 This is a library for controlling colours and formatting, such as red
 bold text or blue underlined text, on ANSI terminals.
 
-### [View the Rustdoc](http://bsago.me/doc/ansi_term/)
+### [View the Rustdoc](http://ogham.rustdocs.org/ansi_term/)
 
 
 ## Installation
