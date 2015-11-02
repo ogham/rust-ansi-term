@@ -98,8 +98,9 @@
 //! Style::default().paint("No colours here.")
 //! ```
 
-use std::fmt;
+use std::borrow::Cow;
 use std::default::Default;
+use std::fmt;
 
 use Colour::*;
 use Difference::*;
@@ -110,17 +111,10 @@ use Difference::*;
 ///
 /// Although not technically a string itself, it can be turned into
 /// one with the `to_string` method.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ANSIString<'a> {
-    string: &'a str,
+    string: Cow<'a, str>,
     style: Style,
-}
-
-impl<'a> ANSIString<'a> {
-    /// Creates a new ANSI String with the given contents and style.
-    pub fn new(contents: &'a str, style: Style) -> ANSIString<'a> {
-        ANSIString { string: contents, style: style }
-    }
 }
 
 impl<'a> fmt::Display for ANSIString<'a> {
@@ -128,6 +122,16 @@ impl<'a> fmt::Display for ANSIString<'a> {
         try!(self.style.write_prefix(f));
         try!(write!(f, "{}", self.string));
         self.style.write_suffix(f)
+    }
+}
+
+impl<'a, S> From<S> for ANSIString<'a>
+where S: Into<Cow<'a, str>> {
+    fn from(input: S) -> ANSIString<'a> {
+        ANSIString {
+            string: input.into(),
+            style:  Style::default(),
+        }
     }
 }
 
@@ -148,31 +152,31 @@ pub enum Colour {
 // Only *after* they'd installed it.
 
 impl Colour {
-    fn foreground_code(&self) -> String {
+    fn write_foreground_code(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Black  => "30".to_string(),
-            Red    => "31".to_string(),
-            Green  => "32".to_string(),
-            Yellow => "33".to_string(),
-            Blue   => "34".to_string(),
-            Purple => "35".to_string(),
-            Cyan   => "36".to_string(),
-            White  => "37".to_string(),
-            Fixed(num) => format!("38;5;{}", &num),
+            Black      => write!(f, "30"),
+            Red        => write!(f, "31"),
+            Green      => write!(f, "32"),
+            Yellow     => write!(f, "33"),
+            Blue       => write!(f, "34"),
+            Purple     => write!(f, "35"),
+            Cyan       => write!(f, "36"),
+            White      => write!(f, "37"),
+            Fixed(num) => write!(f, "38;5;{}", &num),
         }
     }
 
-    fn background_code(&self) -> String {
+    fn write_background_code(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Black  => "40".to_string(),
-            Red    => "41".to_string(),
-            Green  => "42".to_string(),
-            Yellow => "43".to_string(),
-            Blue   => "44".to_string(),
-            Purple => "45".to_string(),
-            Cyan   => "46".to_string(),
-            White  => "47".to_string(),
-            Fixed(num) => format!("48;5;{}", &num),
+            Black      => write!(f, "40"),
+            Red        => write!(f, "41"),
+            Green      => write!(f, "42"),
+            Yellow     => write!(f, "43"),
+            Blue       => write!(f, "44"),
+            Purple     => write!(f, "45"),
+            Cyan       => write!(f, "46"),
+            White      => write!(f, "47"),
+            Fixed(num) => write!(f, "48;5;{}", &num),
         }
     }
 
@@ -184,8 +188,12 @@ impl Colour {
     /// Paints the given text with this colour, returning an ANSI string.
     /// This is a short-cut so you don't have to use Blue.normal() just
     /// to get blue text.
-    pub fn paint(self, input: &str) -> ANSIString {
-        ANSIString::new(input, self.normal())
+    pub fn paint<'a, S>(self, input: S) -> ANSIString<'a>
+    where S: Into<Cow<'a, str>> {
+        ANSIString {
+            string: input.into(),
+            style:  self.normal(),
+        }
     }
 
     /// Returns a Style with the bold property set.
@@ -251,8 +259,12 @@ impl Style {
     }
 
     /// Paints the given text with this colour, returning an ANSI string.
-    pub fn paint(self, input: &str) -> ANSIString {
-        ANSIString::new(input, self)
+    pub fn paint<'a, S>(self, input: S) -> ANSIString<'a>
+    where S: Into<Cow<'a, str>> {
+        ANSIString {
+            string: input.into(),
+            style:  self,
+        }
     }
 
     /// Returns a Style with the bold property set.
@@ -295,73 +307,78 @@ impl Style {
         Style { background: Some(background), .. *self }
     }
 
-    fn prefix(&self) -> String {
-        let mut prefix = String::new();
-        let mut semicolon = false;
+    fn write_prefix(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use std::fmt::Write;
+
+        if self.is_plain() {
+            return Ok(());
+        }
+
+        let mut written_anything = false;
+        try!(write!(f, "\x1B["));
 
         if self.is_bold {
-            prefix.push('1');
-            semicolon = true;
+            written_anything = true;
+            try!(f.write_char('1'));
         }
 
         if self.is_dimmed {
-            if semicolon { prefix.push(';') }
-            prefix.push('2');
-            semicolon = true;
+            if written_anything { try!(f.write_char(';')) }
+            written_anything = true;
+
+            try!(f.write_char('2'));
         }
 
         if self.is_italic {
-            if semicolon { prefix.push(';') }
-            prefix.push('3');
-            semicolon = true;
+            if written_anything { try!(f.write_char(';')) }
+            written_anything = true;
+
+            try!(f.write_char('3'));
         }
 
         if self.is_underline {
-            if semicolon { prefix.push(';') }
-            prefix.push('4');
-            semicolon = true;
+            if written_anything { try!(f.write_char(';')) }
+            written_anything = true;
+
+            try!(f.write_char('4'));
         }
 
         if self.is_blink {
-            if semicolon { prefix.push(';') }
-            prefix.push('5');
-            semicolon = true;
+            if written_anything { try!(f.write_char(';')) }
+            written_anything = true;
+
+            try!(f.write_char('5'));
         }
 
         if self.is_reverse {
-            if semicolon { prefix.push(';') }
-            prefix.push('6');
-            semicolon = true;
+            if written_anything { try!(f.write_char(';')) }
+            written_anything = true;
+
+            try!(f.write_char('6'));
         }
 
         if self.is_hidden {
-            if semicolon { prefix.push(';') }
-            prefix.push('7');
-            semicolon = true;
+            if written_anything { try!(f.write_char(';')) }
+            written_anything = true;
+
+            try!(f.write_char('7'));
         }
 
         if let Some(bg) = self.background {
-            if semicolon { prefix.push(';'); }
-            prefix.push_str(&bg.background_code());
-            semicolon = true;
+            if written_anything { try!(f.write_char(';')); }
+            written_anything = true;
+
+            try!(bg.write_background_code(f));
         }
 
         if let Some(fg) = self.foreground {
-            if semicolon { prefix.push(';'); }
-            prefix.push_str(&fg.foreground_code());
+            if written_anything { try!(f.write_char(';')); }
+
+            try!(fg.write_foreground_code(f));
         }
 
-        if prefix.len() != 0 {
-            prefix = "\x1B[".to_string() + &prefix;
-            prefix.push('m');
-            prefix
-        } else {
-            prefix
-        }
-    }
-
-    fn write_prefix(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.prefix())
+        try!(f.write_char('m'));
+        Ok(())
     }
 
     fn write_suffix(&self, f: &mut fmt::Formatter) -> fmt::Result {
