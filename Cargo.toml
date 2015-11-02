@@ -11,4 +11,3 @@ version = "0.6.3"
 
 [lib]
 name = "ansi_term"
-doctest = false
