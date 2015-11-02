@@ -98,6 +98,7 @@
 //! Style::default().paint("No colours here.")
 //! ```
 
+use std::borrow::Cow;
 use std::default::Default;
 use std::fmt;
 
@@ -110,17 +111,10 @@ use Difference::*;
 ///
 /// Although not technically a string itself, it can be turned into
 /// one with the `to_string` method.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ANSIString<'a> {
-    string: &'a str,
+    string: Cow<'a, str>,
     style: Style,
-}
-
-impl<'a> ANSIString<'a> {
-    /// Creates a new ANSI String with the given contents and style.
-    pub fn new(contents: &'a str, style: Style) -> ANSIString<'a> {
-        ANSIString { string: contents, style: style }
-    }
 }
 
 impl<'a> fmt::Display for ANSIString<'a> {
@@ -128,6 +122,16 @@ impl<'a> fmt::Display for ANSIString<'a> {
         try!(self.style.write_prefix(f));
         try!(write!(f, "{}", self.string));
         self.style.write_suffix(f)
+    }
+}
+
+impl<'a, S> From<S> for ANSIString<'a>
+where S: Into<Cow<'a, str>> {
+    fn from(input: S) -> ANSIString<'a> {
+        ANSIString {
+            string: input.into(),
+            style:  Style::default(),
+        }
     }
 }
 
@@ -184,8 +188,12 @@ impl Colour {
     /// Paints the given text with this colour, returning an ANSI string.
     /// This is a short-cut so you don't have to use Blue.normal() just
     /// to get blue text.
-    pub fn paint(self, input: &str) -> ANSIString {
-        ANSIString::new(input, self.normal())
+    pub fn paint<'a, S>(self, input: S) -> ANSIString<'a>
+    where S: Into<Cow<'a, str>> {
+        ANSIString {
+            string: input.into(),
+            style:  self.normal(),
+        }
     }
 
     /// Returns a Style with the bold property set.
@@ -251,8 +259,12 @@ impl Style {
     }
 
     /// Paints the given text with this colour, returning an ANSI string.
-    pub fn paint(self, input: &str) -> ANSIString {
-        ANSIString::new(input, self)
+    pub fn paint<'a, S>(self, input: S) -> ANSIString<'a>
+    where S: Into<Cow<'a, str>> {
+        ANSIString {
+            string: input.into(),
+            style:  self,
+        }
     }
 
     /// Returns a Style with the bold property set.
