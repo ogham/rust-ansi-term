@@ -1,7 +1,28 @@
 language: rust
 
-env:
-  global:
-    - secure: Dmk4n7fKRM1Fp4GYiXrP5RTM1F1LHLfsxz+CycgEWLzWp6AuTHf7X0KPJMyMD3BrJU7FiF/HwT+YcU/9hELTCkysSvzp1qZIkR0DidLWmjxELTNAl/wi/qGuE1hfCHiJJBSygzKCwNCU01BuNwKFnwrGtnYNOg0CB1X8MnxYS20=
-after_script:
-  - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
+addons:
+  apt:
+    packages:
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+
+rust:
+  - nightly
+  - beta
+  - stable
+
+# load travis-cargo
+before_script:
+  - |
+      pip install 'travis-cargo<0.2' --user &&
+      export PATH=$HOME/.local/bin:$PATH
+
+script:
+  - |
+      travis-cargo build &&
+      travis-cargo test &&
+      travis-cargo --only stable doc
+after_success:
+  # measure code coverage and upload to coveralls.io
+  - travis-cargo coveralls --no-sudo
