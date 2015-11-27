@@ -1,19 +1,17 @@
-# rust-ansi-term [![](http://meritbadge.herokuapp.com/ansi-term)](https://crates.io/crates/ansi-term) [![Build Status](https://travis-ci.org/ogham/rust-ansi-term.svg?branch=master)](https://travis-ci.org/ogham/rust-ansi-term) [![Coverage Status](https://coveralls.io/repos/ogham/rust-ansi-term/badge.svg?branch=master&service=github)](https://coveralls.io/github/ogham/rust-ansi-term?branch=master)
+# rust-ansi-term [![ansi-term on crates.io](http://meritbadge.herokuapp.com/ansi-term)](https://crates.io/crates/ansi_term) [![Build status](https://travis-ci.org/ogham/rust-ansi-term.svg?branch=master)](https://travis-ci.org/ogham/rust-ansi-term) [![Coverage status](https://coveralls.io/repos/ogham/rust-ansi-term/badge.svg?branch=master&service=github)](https://coveralls.io/github/ogham/rust-ansi-term?branch=master)
 
-This is a library for controlling colours and formatting, such as red
-bold text or blue underlined text, on ANSI terminals.
+This is a library for controlling colours and formatting, such as red bold text or blue underlined text, on ANSI terminals.
 
-### [View the Rustdoc](http://ogham.rustdocs.org/ansi_term/)
+### [View the Rustdoc](http://ogham.rustdocs.org/ansi_term)
 
 
-## Installation
+# Installation
 
-This crate uses [Cargo](http://crates.io/), Rust's package manager.
-You can use this crate by adding `ansi_term` to your Cargo dependencies:
+This crate works with [Cargo](http://crates.io). Add the following to your `Cargo.toml` dependencies section:
 
 ```toml
 [dependencies]
-ansi_term = "*"
+ansi_term = "0.7.0"
 ```
 
 
