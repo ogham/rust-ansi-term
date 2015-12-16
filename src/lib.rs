@@ -145,7 +145,7 @@ use Difference::*;
 ///
 /// Although not technically a string itself, it can be turned into
 /// one with the `to_string` method.
-#[derive(Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct ANSIString<'a> {
     string: Cow<'a, str>,
     style: Style,
