@@ -135,6 +135,7 @@
 use std::borrow::Cow;
 use std::default::Default;
 use std::fmt;
+use std::ops::Deref;
 
 use Colour::*;
 use Difference::*;
@@ -145,6 +146,23 @@ use Difference::*;
 ///
 /// Although not technically a string itself, it can be turned into
 /// one with the `to_string` method.
+///
+/// ### Examples
+///
+/// ```no_run
+/// use ansi_term::ANSIString;
+/// use ansi_term::Colour::Red;
+///
+/// let red_string = Red.paint("a red string");
+/// println!("{}", red_string);
+/// ```
+///
+/// ```
+/// use ansi_term::ANSIString;
+///
+/// let plain_string = ANSIString::from("a plain string");
+/// assert_eq!(&*plain_string, "a plain string");
+/// ```
 #[derive(PartialEq, Debug, Clone)]
 pub struct ANSIString<'a> {
     string: Cow<'a, str>,
@@ -168,6 +186,15 @@ where S: Into<Cow<'a, str>> {
         }
     }
 }
+
+impl<'a> Deref for ANSIString<'a> {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        self.string.deref()
+    }
+}
+
 
 /// A colour is one specific type of ANSI escape code, and can refer
 /// to either the foreground or background colour.
