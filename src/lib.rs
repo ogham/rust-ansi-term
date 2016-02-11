@@ -637,9 +637,8 @@ impl<'a> fmt::Display for ANSIStrings<'a> {
 
 #[cfg(test)]
 mod tests {
-    pub use super::Style;
+    pub use super::{Style, ANSIStrings};
     pub use super::Colour::*;
-    pub use super::ANSIStrings;
 
     macro_rules! test {
         ($name: ident: $style: expr; $input: expr => $result: expr) => {
@@ -677,8 +676,8 @@ mod tests {
     test!(hidden:                Style::new().hidden();             "hi" => "\x1B[7mhi\x1B[0m");
 
     mod difference {
-        pub use ::Difference::*;
-        pub use super::*;
+        use super::*;
+        use super::super::Difference::*;
 
         #[test]
         fn diff() {
