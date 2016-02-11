@@ -1,7 +1,3 @@
-#![crate_name = "ansi_term"]
-#![crate_type = "rlib"]
-#![crate_type = "dylib"]
-
 //! This is a library for controlling colours and formatting, such as
 //! red bold text or blue underlined text, on ANSI terminals.
 //!
@@ -132,6 +128,17 @@
 //! works in the same way as its singular counterpart, with a `Display`
 //! implementation that only performs the formatting when required.
 
+
+#![crate_name = "ansi_term"]
+#![crate_type = "rlib"]
+#![crate_type = "dylib"]
+
+#![warn(missing_copy_implementations)]
+#![warn(missing_docs)]
+#![warn(trivial_casts, trivial_numeric_casts)]
+#![warn(unused_extern_crates, unused_qualifications)]
+
+
 use std::borrow::Cow;
 use std::default::Default;
 use std::fmt;
@@ -203,7 +210,53 @@ impl<'a> Deref for ANSIString<'a> {
 /// See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum Colour {
-    Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed(u8),
+
+    /// Colour #0 (foreground code `30`, background code `40`).
+    ///
+    /// This is not necessarily the background colour, and using it as one may
+    /// render the text hard to read on terminals with dark backgrounds.
+    Black,
+
+    /// Colour #1 (foreground code `31`, background code `41`).
+    Red,
+
+    /// Colour #2 (foreground code `32`, background code `42`).
+    Green,
+
+    /// Colour #3 (foreground code `33`, background code `43`).
+    Yellow,
+
+    /// Colour #4 (foreground code `34`, background code `44`).
+    Blue,
+
+    /// Colour #5 (foreground code `35`, background code `45`).
+    Purple,
+
+    /// Colour #6 (foreground code `36`, background code `46`).
+    Cyan,
+
+    /// Colour #7 (foreground code `37`, background code `47`).
+    ///
+    /// As above, this is not necessarily the foreground colour, and may be
+    /// hard to read on terminals with light backgrounds.
+    White,
+
+    /// A colour number from 0 to 255, for use in 256-colour terminal
+    /// environments.
+    ///
+    /// - Colours 0 to 7 are the `Black` to `White` variants respectively.
+    ///   These colours can usually be changed in the terminal emulator.
+    /// - Colours 8 to 15 are brighter versions of the eight colours above.
+    ///   These can also usually be changed in the terminal emulator, or it
+    ///   could be configured to use the original colours and show the text in
+    ///   bold instead. It varies depending on the program.
+    /// - Colours 16 to 231 contain several palettes of bright colours,
+    ///   arranged in six squares measuring six by six each.
+    /// - Colours 232 to 255 are shades of grey from black to white.
+    ///
+    /// It might make more sense to look at a [colour chart](^cc).
+    /// [^cc]: https://upload.wikimedia.org/wikipedia/en/1/15/Xterm_256color_chart.svg
+    Fixed(u8),
 }
 
 // I'm not beyond calling Colour Colour, rather than Color, but I did
