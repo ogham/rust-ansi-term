@@ -421,63 +421,43 @@ impl Style {
         Style { background: Some(background), .. *self }
     }
 
+    /// Write any ANSI codes that go *before* a piece of text. These should be
+    /// the codes to set the terminal to a different colour or font style.
     fn write_prefix(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use std::fmt::Write;
 
+        // If there are actually no styles here, then don’t write *any* codes
+        // as the prefix. An empty ANSI code may not affect the terminal
+        // output at all, but a user may just want a code-free string.
         if self.is_plain() {
             return Ok(());
         }
 
-        let mut written_anything = false;
+        // Write the codes’ prefix, then write numbers, separated by
+        // semicolons, for each text style we want to apply.
         try!(write!(f, "\x1B["));
+        let mut written_anything = false;
 
-        if self.is_bold {
-            written_anything = true;
-            try!(f.write_char('1'));
+        {
+            let mut write_char = |c| {
+                if written_anything { try!(f.write_char(';')); }
+                written_anything = true;
+                try!(f.write_char(c));
+                Ok(())
+            };
+
+            if self.is_bold       { try!(write_char('1')); }
+            if self.is_dimmed     { try!(write_char('2')); }
+            if self.is_italic     { try!(write_char('3')); }
+            if self.is_underline  { try!(write_char('4')); }
+            if self.is_blink      { try!(write_char('5')); }
+            if self.is_reverse    { try!(write_char('6')); }
+            if self.is_hidden     { try!(write_char('7')); }
         }
 
-        if self.is_dimmed {
-            if written_anything { try!(f.write_char(';')) }
-            written_anything = true;
-
-            try!(f.write_char('2'));
-        }
-
-        if self.is_italic {
-            if written_anything { try!(f.write_char(';')) }
-            written_anything = true;
-
-            try!(f.write_char('3'));
-        }
-
-        if self.is_underline {
-            if written_anything { try!(f.write_char(';')) }
-            written_anything = true;
-
-            try!(f.write_char('4'));
-        }
-
-        if self.is_blink {
-            if written_anything { try!(f.write_char(';')) }
-            written_anything = true;
-
-            try!(f.write_char('5'));
-        }
-
-        if self.is_reverse {
-            if written_anything { try!(f.write_char(';')) }
-            written_anything = true;
-
-            try!(f.write_char('6'));
-        }
-
-        if self.is_hidden {
-            if written_anything { try!(f.write_char(';')) }
-            written_anything = true;
-
-            try!(f.write_char('7'));
-        }
-
+        // The foreground and background colours, if specified, need to be
+        // handled specially because the number codes are more complicated.
+        // (see `write_background_code` and `write_foreground_code`)
         if let Some(bg) = self.background {
             if written_anything { try!(f.write_char(';')); }
             written_anything = true;
@@ -491,14 +471,18 @@ impl Style {
             try!(fg.write_foreground_code(f));
         }
 
+        // All the codes end with an `m`, because reasons.
         try!(f.write_char('m'));
         Ok(())
     }
 
+    /// Write any ANSI codes that go *after* a piece of text. These should be
+    /// the codes to *reset* the terminal back to its normal colour and style.
     fn write_suffix(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self == &Style::default() {
-            write!(f, "")
-        } else {
+        if self.is_plain() {
+            Ok(())
+        }
+        else {
             write!(f, "\x1B[0m")
         }
     }
