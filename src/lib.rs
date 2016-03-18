@@ -259,6 +259,9 @@ pub enum Colour {
     Fixed(u8),
 }
 
+/// Color is a type alias for Colour for those who can't be bothered.
+pub use Colour as Color;
+
 // I'm not beyond calling Colour Colour, rather than Color, but I did
 // purposefully name this crate 'ansi-term' so people wouldn't get
 // confused when they tried to install it.
