@@ -254,8 +254,8 @@ pub enum Colour {
     ///   arranged in six squares measuring six by six each.
     /// - Colours 232 to 255 are shades of grey from black to white.
     ///
-    /// It might make more sense to look at a [colour chart](^cc).
-    /// [^cc]: https://upload.wikimedia.org/wikipedia/en/1/15/Xterm_256color_chart.svg
+    /// It might make more sense to look at a [colour chart][cc].
+    /// [cc]: https://upload.wikimedia.org/wikipedia/en/1/15/Xterm_256color_chart.svg
     Fixed(u8),
 }
 
