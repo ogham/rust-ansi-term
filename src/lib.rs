@@ -241,6 +241,9 @@ pub enum Colour {
     /// hard to read on terminals with light backgrounds.
     White,
 
+    /// The default terminal foreground or background colour.
+    Def,
+
     /// A colour number from 0 to 255, for use in 256-colour terminal
     /// environments.
     ///
@@ -279,6 +282,7 @@ impl Colour {
             Purple     => write!(f, "35"),
             Cyan       => write!(f, "36"),
             White      => write!(f, "37"),
+            Def        => write!(f, "39"),
             Fixed(num) => write!(f, "38;5;{}", &num),
         }
     }
@@ -293,6 +297,7 @@ impl Colour {
             Purple     => write!(f, "45"),
             Cyan       => write!(f, "46"),
             White      => write!(f, "47"),
+            Def        => write!(f, "49"),
             Fixed(num) => write!(f, "48;5;{}", &num),
         }
     }
@@ -690,6 +695,8 @@ mod tests {
     }
 
     test!(plain:                 Style::default();                  "text/plain" => "text/plain");
+    test!(default:               Def;                               "hi" => "\x1B[39mhi\x1B[0m");
+    test!(default_on_default:    Def.on(Def);                       "hi" => "\x1B[49;39mhi\x1B[0m");
     test!(red:                   Red;                               "hi" => "\x1B[31mhi\x1B[0m");
     test!(black:                 Black.normal();                    "hi" => "\x1B[30mhi\x1B[0m");
     test!(yellow_bold:           Yellow.bold();                     "hi" => "\x1B[1;33mhi\x1B[0m");
