@@ -72,6 +72,16 @@ println!("Yellow on blue: {}", Yellow.on(Blue).paint("wow!"));
 The complete list of styles you can use are:
 `bold`, `dimmed`, `italic`, `underline`, `blink`, `reverse`, `hidden`, and `on` for background colours.
 
+In some cases, you may find it easier to change the foreground on an existing `Style` rather than starting from the appropriate `Colour`.
+You can do this using the `fg` method:
+
+```rust
+    use ansi_term::Style;
+    use ansi_term::Colour::{Blue, Cyan, Yellow};
+    println!("Yellow on blue: {}", Style::new().on(Blue).fg(Yellow).paint("yow!"));
+    println!("Also yellow on blue: {}", Cyan.on(Blue).fg(Yellow).paint("zow!"));
+```
+
 Finally, you can turn a `Colour` into a `Style` with the `normal` method.
 This will produce the exact same `ANSIString` as if you just used the `paint` method on the `Colour` directly, but it’s useful in certain cases: for example, you may have a method that returns `Styles`, and need to represent both the “red bold” and “red, but not bold” styles with values of the same type. The `Style` struct also has a `Default` implementation if you want to have a style with *nothing* set.
 
