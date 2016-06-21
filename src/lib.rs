@@ -89,6 +89,11 @@
 //! `Fixed` colours instead, but there’s nothing to be gained by doing so
 //! either.
 //!
+//! You can also access full 24-bit color by using the `RGB` colour variant,
+//! which takes separate `u8` arguments for red, green, and blue:
+//!
+//!     use ansi_term::Colour::RGB;
+//!     RGB(70, 130, 180).paint("Steel blue");
 //!
 //! ## Combining successive coloured strings
 //!
@@ -257,6 +262,9 @@ pub enum Colour {
     /// It might make more sense to look at a [colour chart][cc].
     /// [cc]: https://upload.wikimedia.org/wikipedia/en/1/15/Xterm_256color_chart.svg
     Fixed(u8),
+
+    /// A 24-bit RGB color, as specified by ISO-8613-3.
+    RGB(u8, u8, u8),
 }
 
 /// Color is a type alias for Colour for those who can't be bothered.
@@ -280,6 +288,7 @@ impl Colour {
             Cyan       => write!(f, "36"),
             White      => write!(f, "37"),
             Fixed(num) => write!(f, "38;5;{}", &num),
+            RGB(r,g,b) => write!(f, "38;2;{};{};{}", &r, &g, &b),
         }
     }
 
@@ -294,6 +303,7 @@ impl Colour {
             Cyan       => write!(f, "46"),
             White      => write!(f, "47"),
             Fixed(num) => write!(f, "48;5;{}", &num),
+            RGB(r,g,b) => write!(f, "48;2;{};{};{}", &r, &g, &b),
         }
     }
 
@@ -706,6 +716,10 @@ mod tests {
     test!(fixed:                 Fixed(100);                        "hi" => "\x1B[38;5;100mhi\x1B[0m");
     test!(fixed_on_purple:       Fixed(100).on(Purple);             "hi" => "\x1B[45;38;5;100mhi\x1B[0m");
     test!(fixed_on_fixed:        Fixed(100).on(Fixed(200));         "hi" => "\x1B[48;5;200;38;5;100mhi\x1B[0m");
+    test!(rgb:                   RGB(70,130,180);                   "hi" => "\x1B[38;2;70;130;180mhi\x1B[0m");
+    test!(rgb_on_blue:           RGB(70,130,180).on(Blue);          "hi" => "\x1B[44;38;2;70;130;180mhi\x1B[0m");
+    test!(blue_on_rgb:           Blue.on(RGB(70,130,180));          "hi" => "\x1B[48;2;70;130;180;34mhi\x1B[0m");
+    test!(rgb_on_rgb:            RGB(70,130,180).on(RGB(5,10,15));  "hi" => "\x1B[48;2;5;10;15;38;2;70;130;180mhi\x1B[0m");
     test!(bold:                  Style::new().bold();               "hi" => "\x1B[1mhi\x1B[0m");
     test!(underline:             Style::new().underline();          "hi" => "\x1B[4mhi\x1B[0m");
     test!(bunderline:            Style::new().bold().underline();   "hi" => "\x1B[1;4mhi\x1B[0m");

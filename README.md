@@ -97,6 +97,12 @@ Fixed(221).on(Fixed(124)).paint("Mustard in the ketchup");
 The first sixteen of these values are the same as the normal and bold standard colour variants.
 There’s nothing stopping you from using these as `Fixed` colours instead, but there’s nothing to be gained by doing so either.
 
+You can also access full 24-bit color by using the `RGB` colour variant, which takes separate `u8` arguments for red, green, and blue:
+
+```rust
+    use ansi_term::Colour::RGB;
+    RGB(70, 130, 180).paint("Steel blue");
+```
 
 ## Combining successive coloured strings
 
