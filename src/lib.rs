@@ -60,6 +60,15 @@
 //! The complete list of styles you can use are: `bold`, `dimmed`, `italic`,
 //! `underline`, `blink`, `reverse`, `hidden`, and `on` for background colours.
 //!
+//! In some cases, you may find it easier to change the foreground on an
+//! existing `Style` rather than starting from the appropriate `Colour`.
+//! You can do this using the `fg` method:
+//!
+//!     use ansi_term::Style;
+//!     use ansi_term::Colour::{Blue, Cyan, Yellow};
+//!     println!("Yellow on blue: {}", Style::new().on(Blue).fg(Yellow).paint("yow!"));
+//!     println!("Also yellow on blue: {}", Cyan.on(Blue).fg(Yellow).paint("zow!"));
+//!
 //! Finally, you can turn a `Colour` into a `Style` with the `normal` method.
 //! This will produce the exact same `ANSIString` as if you just used the
 //! `paint` method on the `Colour` directly, but it’s useful in certain cases:
@@ -429,6 +438,11 @@ impl Style {
         Style { is_hidden: true, .. *self }
     }
 
+    /// Returns a Style with the foreground colour property set.
+    pub fn fg(&self, foreground: Colour) -> Style {
+        Style { foreground: Some(foreground), .. *self }
+    }
+
     /// Returns a Style with the background colour property set.
     pub fn on(&self, background: Colour) -> Style {
         Style { background: Some(background), .. *self }
@@ -709,6 +723,8 @@ mod tests {
     test!(green_bold_ul_2:       Green.underline().bold();          "hi" => "\x1B[1;4;32mhi\x1B[0m");
     test!(purple_on_white:       Purple.on(White);                  "hi" => "\x1B[47;35mhi\x1B[0m");
     test!(purple_on_white_2:     Purple.normal().on(White);         "hi" => "\x1B[47;35mhi\x1B[0m");
+    test!(yellow_on_blue:        Style::new().on(Blue).fg(Yellow);  "hi" => "\x1B[44;33mhi\x1B[0m");
+    test!(yellow_on_blue_2:      Cyan.on(Blue).fg(Yellow);          "hi" => "\x1B[44;33mhi\x1B[0m");
     test!(cyan_bold_on_white:    Cyan.bold().on(White);             "hi" => "\x1B[1;47;36mhi\x1B[0m");
     test!(cyan_ul_on_white:      Cyan.underline().on(White);        "hi" => "\x1B[4;47;36mhi\x1B[0m");
     test!(cyan_bold_ul_on_white: Cyan.bold().underline().on(White); "hi" => "\x1B[1;4;47;36mhi\x1B[0m");
