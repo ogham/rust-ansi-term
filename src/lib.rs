@@ -58,7 +58,8 @@
 //!     println!("Yellow on blue: {}", Yellow.on(Blue).paint("wow!"));
 //!
 //! The complete list of styles you can use are: `bold`, `dimmed`, `italic`,
-//! `underline`, `blink`, `reverse`, `hidden`, and `on` for background colours.
+//! `underline`, `blink`, `reverse`, `hidden`, `strikethrough`, and `on` for
+//! background colours.
 //!
 //! In some cases, you may find it easier to change the foreground on an
 //! existing `Style` rather than starting from the appropriate `Colour`.
@@ -367,6 +368,11 @@ impl Colour {
         Style { foreground: Some(self), is_hidden: true, .. Style::default() }
     }
 
+    /// Returns a Style with the strikethrough property set.
+    pub fn strikethrough(self) -> Style {
+        Style { foreground: Some(self), is_strikethrough: true, .. Style::default() }
+    }
+
     /// Returns a Style with the background colour property set.
     pub fn on(self, background: Colour) -> Style {
         Style { foreground: Some(self), background: Some(background), .. Style::default() }
@@ -385,7 +391,8 @@ pub struct Style {
     is_underline: bool,
     is_blink: bool,
     is_reverse: bool,
-    is_hidden: bool
+    is_hidden: bool,
+    is_strikethrough: bool
 }
 
 impl Style {
@@ -438,6 +445,11 @@ impl Style {
         Style { is_hidden: true, .. *self }
     }
 
+    /// Returns a Style with the hidden property set.
+    pub fn strikethrough(&self) -> Style {
+        Style { is_strikethrough: true, .. *self }
+    }
+
     /// Returns a Style with the foreground colour property set.
     pub fn fg(&self, foreground: Colour) -> Style {
         Style { foreground: Some(foreground), .. *self }
@@ -473,13 +485,14 @@ impl Style {
                 Ok(())
             };
 
-            if self.is_bold       { try!(write_char('1')); }
-            if self.is_dimmed     { try!(write_char('2')); }
-            if self.is_italic     { try!(write_char('3')); }
-            if self.is_underline  { try!(write_char('4')); }
-            if self.is_blink      { try!(write_char('5')); }
-            if self.is_reverse    { try!(write_char('6')); }
-            if self.is_hidden     { try!(write_char('7')); }
+            if self.is_bold           { try!(write_char('1')); }
+            if self.is_dimmed         { try!(write_char('2')); }
+            if self.is_italic         { try!(write_char('3')); }
+            if self.is_underline      { try!(write_char('4')); }
+            if self.is_blink          { try!(write_char('5')); }
+            if self.is_reverse        { try!(write_char('6')); }
+            if self.is_hidden         { try!(write_char('7')); }
+            if self.is_strikethrough  { try!(write_char('9')); }
         }
 
         // The foreground and background colours, if specified, need to be
@@ -567,6 +580,10 @@ impl Style {
             return Reset;
         }
 
+        if self.is_strikethrough && !next.is_strikethrough {
+            return Reset;
+        }
+
         // Cannot go from foreground to no foreground, so must Reset.
         if self.foreground.is_some() && next.foreground.is_none() {
             return Reset;
@@ -607,6 +624,10 @@ impl Style {
             extra_styles.is_hidden = true;
         }
 
+        if self.is_strikethrough != next.is_strikethrough {
+            extra_styles.is_strikethrough = true;
+        }
+
         if self.foreground != next.foreground {
             extra_styles.foreground = next.foreground;
         }
@@ -636,7 +657,8 @@ impl Default for Style {
             is_underline: false,
             is_blink: false,
             is_reverse: false,
-            is_hidden: false
+            is_hidden: false,
+            is_strikethrough: false,
         }
     }
 }
@@ -744,6 +766,7 @@ mod tests {
     test!(blink:                 Style::new().blink();              "hi" => "\x1B[5mhi\x1B[0m");
     test!(reverse:               Style::new().reverse();            "hi" => "\x1B[6mhi\x1B[0m");
     test!(hidden:                Style::new().hidden();             "hi" => "\x1B[7mhi\x1B[0m");
+    test!(stricken:              Style::new().strikethrough();      "hi" => "\x1B[9mhi\x1B[0m");
 
     mod difference {
         use super::*;
@@ -843,6 +866,23 @@ mod tests {
             let extra_styles = ExtraStyles(hidden);
 
             assert_eq!(extra_styles, normal.difference(&hidden));
+        }
+
+        #[test]
+        fn removal_of_strikethrough() {
+            let strikethrough = Style::new().strikethrough();
+            let normal = Style::default();
+
+            assert_eq!(Reset, strikethrough.difference(&normal));
+        }
+
+        #[test]
+        fn addition_of_strikethrough() {
+            let strikethrough = Style::new().strikethrough();
+            let normal = Style::default();
+            let extra_styles = ExtraStyles(strikethrough);
+
+            assert_eq!(extra_styles, normal.difference(&strikethrough));
         }
 
         #[test]
