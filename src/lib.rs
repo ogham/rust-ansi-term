@@ -490,8 +490,8 @@ impl Style {
             if self.is_italic         { try!(write_char('3')); }
             if self.is_underline      { try!(write_char('4')); }
             if self.is_blink          { try!(write_char('5')); }
-            if self.is_reverse        { try!(write_char('6')); }
-            if self.is_hidden         { try!(write_char('7')); }
+            if self.is_reverse        { try!(write_char('7')); }
+            if self.is_hidden         { try!(write_char('8')); }
             if self.is_strikethrough  { try!(write_char('9')); }
         }
 
@@ -764,8 +764,8 @@ mod tests {
     test!(dimmed:                Style::new().dimmed();             "hi" => "\x1B[2mhi\x1B[0m");
     test!(italic:                Style::new().italic();             "hi" => "\x1B[3mhi\x1B[0m");
     test!(blink:                 Style::new().blink();              "hi" => "\x1B[5mhi\x1B[0m");
-    test!(reverse:               Style::new().reverse();            "hi" => "\x1B[6mhi\x1B[0m");
-    test!(hidden:                Style::new().hidden();             "hi" => "\x1B[7mhi\x1B[0m");
+    test!(reverse:               Style::new().reverse();            "hi" => "\x1B[7mhi\x1B[0m");
+    test!(hidden:                Style::new().hidden();             "hi" => "\x1B[8mhi\x1B[0m");
     test!(stricken:              Style::new().strikethrough();      "hi" => "\x1B[9mhi\x1B[0m");
 
     mod difference {
