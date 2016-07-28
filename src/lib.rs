@@ -142,6 +142,28 @@
 //! statically-available `&str` slices. Secondly, that the `ANSIStrings` value
 //! works in the same way as its singular counterpart, with a `Display`
 //! implementation that only performs the formatting when required.
+//!
+//! ## Byte strings
+//!
+//! This library also supports formatting `[u8]` byte strings; this supports
+//! applications working with text in an unknown encoding.  `Style` and
+//! `Color` support painting `[u8]` values, resulting in an `ANSIByteString`.
+//! This type does not implement `Display`, as it may not contain UTF-8, but
+//! it does provide a method `write_to` to write the result to any
+//! `io::Write`:
+//!
+//!     use ansi_term::Colour::Green;
+//!     Green.paint("user data".as_bytes()).write_to(&mut std::io::stdout()).unwrap();
+//!
+//! Similarly, the type `ANSIByteStrings` supports writing a list of
+//! `ANSIByteString` values with minimal escape sequences:
+//!
+//!     use ansi_term::Colour::Green;
+//!     use ansi_term::ANSIByteStrings;
+//!     ANSIByteStrings(&[
+//!         Green.paint("user data 1\n".as_bytes()),
+//!         Green.bold().paint("user data 2\n".as_bytes()),
+//!     ]).write_to(&mut std::io::stdout()).unwrap();
 
 
 #![crate_name = "ansi_term"]
@@ -157,11 +179,59 @@
 use std::borrow::Cow;
 use std::default::Default;
 use std::fmt;
+use std::io;
 use std::ops::Deref;
 
 use Colour::*;
 use Difference::*;
 
+trait AnyWrite {
+    type str : ?Sized;
+    type Error;
+    fn write_fmt(&mut self, fmt: fmt::Arguments) -> Result<(), Self::Error>;
+    fn write_str(&mut self, s: &Self::str) -> Result<(), Self::Error>;
+}
+
+impl<'a> AnyWrite for fmt::Write + 'a {
+    type str = str;
+    type Error = fmt::Error;
+    fn write_fmt(&mut self, fmt: fmt::Arguments) -> Result<(), Self::Error> {
+        fmt::Write::write_fmt(self, fmt)
+    }
+    fn write_str(&mut self, s: &Self::str) -> Result<(), Self::Error> {
+        fmt::Write::write_str(self, s)
+    }
+}
+
+impl<'a> AnyWrite for io::Write + 'a {
+    type str = [u8];
+    type Error = io::Error;
+    fn write_fmt(&mut self, fmt: fmt::Arguments) -> Result<(), Self::Error> {
+        io::Write::write_fmt(self, fmt)
+    }
+    fn write_str(&mut self, s: &Self::str) -> Result<(), Self::Error> {
+        io::Write::write_all(self, s)
+    }
+}
+
+/// An ANSIGenericString includes a generic string type and a Style to
+/// display that string.  ANSIString and ANSIByteString are aliases for
+/// this type on str and [u8], respectively.
+#[derive(PartialEq, Debug, Clone)]
+pub struct ANSIGenericString<'a, S: 'a + ToOwned + ?Sized>
+where <S as ToOwned>::Owned: std::fmt::Debug {
+    style: Style,
+    string: Cow<'a, S>,
+}
+
+impl<'a, S: 'a + ToOwned + ?Sized> ANSIGenericString<'a, S>
+where <S as ToOwned>::Owned: std::fmt::Debug {
+    fn write_to_any<W: AnyWrite<str=S> + ?Sized>(&self, w: &mut W) -> Result<(), W::Error> {
+        try!(self.style.write_prefix(w));
+        try!(w.write_str(&self.string));
+        self.style.write_suffix(w)
+    }
+}
 
 /// An ANSI String is a string coupled with the Style to display it
 /// in a terminal.
@@ -185,34 +255,44 @@ use Difference::*;
 /// let plain_string = ANSIString::from("a plain string");
 /// assert_eq!(&*plain_string, "a plain string");
 /// ```
-#[derive(PartialEq, Debug, Clone)]
-pub struct ANSIString<'a> {
-    string: Cow<'a, str>,
-    style: Style,
-}
+pub type ANSIString<'a> = ANSIGenericString<'a, str>;
+
+/// An ANSIByteString represents a formatted series of bytes.  Use
+/// ANSIByteString when styling text with an unknown encoding.
+pub type ANSIByteString<'a> = ANSIGenericString<'a, [u8]>;
 
 impl<'a> fmt::Display for ANSIString<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(self.style.write_prefix(f));
-        try!(write!(f, "{}", self.string));
-        self.style.write_suffix(f)
+        let w: &mut fmt::Write = f;
+        self.write_to_any(w)
     }
 }
 
-impl<'a, S> From<S> for ANSIString<'a>
-where S: Into<Cow<'a, str>> {
-    fn from(input: S) -> ANSIString<'a> {
-        ANSIString {
+impl<'a> ANSIByteString<'a> {
+    /// Write an ANSIByteString to an io::Write.  This writes the escape
+    /// sequences for the associated Style around the bytes.
+    pub fn write_to<W: io::Write>(&self, w: &mut W) -> io::Result<()> {
+        let w: &mut io::Write = w;
+        self.write_to_any(w)
+    }
+}
+
+impl<'a, I, S: 'a + ToOwned + ?Sized> From<I> for ANSIGenericString<'a, S>
+where I: Into<Cow<'a, S>>,
+      <S as ToOwned>::Owned: std::fmt::Debug {
+    fn from(input: I) -> ANSIGenericString<'a, S> {
+        ANSIGenericString {
             string: input.into(),
             style:  Style::default(),
         }
     }
 }
 
-impl<'a> Deref for ANSIString<'a> {
-    type Target = str;
+impl<'a, S: 'a + ToOwned + ?Sized> Deref for ANSIGenericString<'a, S>
+where <S as ToOwned>::Owned: std::fmt::Debug {
+    type Target = S;
 
-    fn deref(&self) -> &str {
+    fn deref(&self) -> &S {
         self.string.deref()
     }
 }
@@ -287,7 +367,7 @@ pub use Colour as Color;
 // Only *after* they'd installed it.
 
 impl Colour {
-    fn write_foreground_code(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn write_foreground_code<W: AnyWrite + ?Sized>(&self, f: &mut W) -> Result<(), W::Error> {
         match *self {
             Black      => write!(f, "30"),
             Red        => write!(f, "31"),
@@ -302,7 +382,7 @@ impl Colour {
         }
     }
 
-    fn write_background_code(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn write_background_code<W: AnyWrite + ?Sized>(&self, f: &mut W) -> Result<(), W::Error> {
         match *self {
             Black      => write!(f, "40"),
             Red        => write!(f, "41"),
@@ -325,9 +405,10 @@ impl Colour {
     /// Paints the given text with this colour, returning an ANSI string.
     /// This is a short-cut so you don't have to use Blue.normal() just
     /// to get blue text.
-    pub fn paint<'a, S>(self, input: S) -> ANSIString<'a>
-    where S: Into<Cow<'a, str>> {
-        ANSIString {
+    pub fn paint<'a, I, S: 'a + ToOwned + ?Sized>(self, input: I) -> ANSIGenericString<'a, S>
+    where I: Into<Cow<'a, S>>,
+          <S as ToOwned>::Owned: std::fmt::Debug {
+        ANSIGenericString {
             string: input.into(),
             style:  self.normal(),
         }
@@ -402,9 +483,10 @@ impl Style {
     }
 
     /// Paints the given text with this colour, returning an ANSI string.
-    pub fn paint<'a, S>(self, input: S) -> ANSIString<'a>
-    where S: Into<Cow<'a, str>> {
-        ANSIString {
+    pub fn paint<'a, I, S: 'a + ToOwned + ?Sized>(self, input: I) -> ANSIGenericString<'a, S>
+    where I: Into<Cow<'a, S>>,
+          <S as ToOwned>::Owned: std::fmt::Debug {
+        ANSIGenericString {
             string: input.into(),
             style:  self,
         }
@@ -462,9 +544,7 @@ impl Style {
 
     /// Write any ANSI codes that go *before* a piece of text. These should be
     /// the codes to set the terminal to a different colour or font style.
-    fn write_prefix(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use std::fmt::Write;
-
+    fn write_prefix<W: AnyWrite + ?Sized>(&self, f: &mut W) -> Result<(), W::Error> {
         // If there are actually no styles here, then don’t write *any* codes
         // as the prefix. An empty ANSI code may not affect the terminal
         // output at all, but a user may just want a code-free string.
@@ -479,9 +559,9 @@ impl Style {
 
         {
             let mut write_char = |c| {
-                if written_anything { try!(f.write_char(';')); }
+                if written_anything { try!(write!(f, ";")); }
                 written_anything = true;
-                try!(f.write_char(c));
+                try!(write!(f, "{}", c));
                 Ok(())
             };
 
@@ -499,26 +579,26 @@ impl Style {
         // handled specially because the number codes are more complicated.
         // (see `write_background_code` and `write_foreground_code`)
         if let Some(bg) = self.background {
-            if written_anything { try!(f.write_char(';')); }
+            if written_anything { try!(write!(f, ";")); }
             written_anything = true;
 
             try!(bg.write_background_code(f));
         }
 
         if let Some(fg) = self.foreground {
-            if written_anything { try!(f.write_char(';')); }
+            if written_anything { try!(write!(f, ";")); }
 
             try!(fg.write_foreground_code(f));
         }
 
         // All the codes end with an `m`, because reasons.
-        try!(f.write_char('m'));
+        try!(write!(f, "m"));
         Ok(())
     }
 
     /// Write any ANSI codes that go *after* a piece of text. These should be
     /// the codes to *reset* the terminal back to its normal colour and style.
-    fn write_suffix(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn write_suffix<W: AnyWrite + ?Sized>(&self, f: &mut W) -> Result<(), W::Error> {
         if self.is_plain() {
             Ok(())
         }
@@ -681,44 +761,84 @@ enum Difference {
     NoDifference,
 }
 
+/// A set of `ANSIGenericString`s collected together, in order to be
+/// written with a minimum of control characters.
+pub struct ANSIGenericStrings<'a, S: 'a + ToOwned + ?Sized>
+    (pub &'a [ANSIGenericString<'a, S>])
+    where <S as ToOwned>::Owned: std::fmt::Debug;
+
 /// A set of `ANSIString`s collected together, in order to be written with a
 /// minimum of control characters.
-pub struct ANSIStrings<'a>(pub &'a [ANSIString<'a>]);
+pub type ANSIStrings<'a> = ANSIGenericStrings<'a, str>;
 
-impl<'a> fmt::Display for ANSIStrings<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-	    let first = match self.0.first() {
-	        None => return Ok(()),
-	        Some(f) => f,
-	    };
+/// A function to construct an ANSIStrings instance.
+#[allow(non_snake_case)]
+pub fn ANSIStrings<'a>(arg: &'a [ANSIString<'a>]) -> ANSIStrings<'a> {
+    ANSIGenericStrings(arg)
+}
 
-        try!(first.style.write_prefix(f));
-	    try!(write!(f, "{}", first.string));
+/// A set of `ANSIByteString`s collected together, in order to be
+/// written with a minimum of control characters.
+pub type ANSIByteStrings<'a> = ANSIGenericStrings<'a, [u8]>;
 
-	    for window in self.0.windows(2) {
-	        match window[0].style.difference(&window[1].style) {
-	            ExtraStyles(style) => try!(style.write_prefix(f)),
-	            Reset => {
-                    try!(f.write_str("\x1B[0m"));
-                    try!(window[1].style.write_prefix(f));
-	            },
-	            NoDifference => { /* Do nothing! */ },
-	        }
+/// A function to construct an ANSIByteStrings instance.
+#[allow(non_snake_case)]
+pub fn ANSIByteStrings<'a>(arg: &'a [ANSIByteString<'a>]) -> ANSIByteStrings<'a> {
+    ANSIGenericStrings(arg)
+}
 
-            try!(write!(f, "{}", window[1].string));
-	    }
+impl<'a, S: 'a + ToOwned + ?Sized> ANSIGenericStrings<'a, S>
+where <S as ToOwned>::Owned: std::fmt::Debug {
+    fn write_to_any<W: AnyWrite<str=S> + ?Sized>(&self, w: &mut W) -> Result<(), W::Error> {
+        let first = match self.0.first() {
+            None => return Ok(()),
+            Some(f) => f,
+        };
+
+        try!(first.style.write_prefix(w));
+        try!(w.write_str(&first.string));
+
+        for window in self.0.windows(2) {
+            match window[0].style.difference(&window[1].style) {
+                ExtraStyles(style) => try!(style.write_prefix(w)),
+                Reset => {
+                    try!(write!(w, "\x1B[0m"));
+                    try!(window[1].style.write_prefix(w));
+                },
+                NoDifference => { /* Do nothing! */ },
+            }
+
+            try!(w.write_str(&window[1].string));
+        }
 
         // Write the final reset string after all of the ANSIStrings have been
         // written, *except* if the last one has no styles, because it would
         // have already been written by this point.
         if let Some(last) = self.0.last() {
             if !last.style.is_plain() {
-                try!(f.write_str("\x1B[0m"));
+                try!(write!(w, "\x1B[0m"));
             }
         }
 
-	    Ok(())
-	}
+        Ok(())
+    }
+}
+
+impl<'a> fmt::Display for ANSIStrings<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let f: &mut fmt::Write = f;
+        self.write_to_any(f)
+    }
+}
+
+impl<'a> ANSIByteStrings<'a> {
+    /// Write ANSIByteStrings to an io::Write.  This writes the minimal
+    /// escape sequences for the associated Styles around each set of
+    /// bytes.
+    pub fn write_to<W: io::Write>(&self, w: &mut W) -> io::Result<()> {
+        let w: &mut io::Write = w;
+        self.write_to_any(w)
+    }
 }
 
 #[cfg(test)]
@@ -730,7 +850,11 @@ mod tests {
         ($name: ident: $style: expr; $input: expr => $result: expr) => {
             #[test]
             fn $name() {
-                assert_eq!($style.paint($input).to_string(), $result.to_string())
+                assert_eq!($style.paint($input).to_string(), $result.to_string());
+
+                let mut v = Vec::new();
+                $style.paint($input.as_bytes()).write_to(&mut v).unwrap();
+                assert_eq!(v.as_slice(), $result.as_bytes());
             }
         };
     }

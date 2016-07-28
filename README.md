@@ -141,3 +141,29 @@ Firstly, the `paint` method can take *either* an owned `String` or a borrowed `&
 Internally, an `ANSIString` holds a copy-on-write (`Cow`) string value to deal with both owned and borrowed strings at the same time.
 This is used here to display a `String`, the result of the `format!` call, using the same mechanism as some statically-available `&str` slices.
 Secondly, that the `ANSIStrings` value works in the same way as its singular counterpart, with a `Display` implementation that only performs the formatting when required.
+
+## Byte strings
+
+This library also supports formatting `[u8]` byte strings; this supports
+applications working with text in an unknown encoding.  `Style` and
+`Color` support painting `[u8]` values, resulting in an `ANSIByteString`.
+This type does not implement `Display`, as it may not contain UTF-8, but
+it does provide a method `write_to` to write the result to any
+`io::Write`:
+
+```rust
+use ansi_term::Colour::Green;
+Green.paint("user data".as_bytes()).write_to(&mut std::io::stdout()).unwrap();
+```
+
+Similarly, the type `ANSIByteStrings` supports writing a list of
+`ANSIByteString` values with minimal escape sequences:
+
+```rust
+use ansi_term::Colour::Green;
+use ansi_term::ANSIByteStrings;
+ANSIByteStrings(&[
+    Green.paint("user data 1\n".as_bytes()),
+    Green.bold().paint("user data 2\n".as_bytes()),
+]).write_to(&mut std::io::stdout()).unwrap();
+```
