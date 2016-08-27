@@ -261,6 +261,19 @@ pub type ANSIString<'a> = ANSIGenericString<'a, str>;
 /// ANSIByteString when styling text with an unknown encoding.
 pub type ANSIByteString<'a> = ANSIGenericString<'a, [u8]>;
 
+/// Like `ANSIString`, but only displays the style prefix.
+#[derive(Clone, Copy, Debug)]
+pub struct Prefix(Style);
+
+/// Like `ANSIString`, but only displays the style suffix.
+#[derive(Clone, Copy, Debug)]
+pub struct Suffix(Style);
+
+/// Like `ANSIString`, but only displays the difference between two
+/// styles.
+#[derive(Clone, Copy, Debug)]
+pub struct Infix(Style, Style);
+
 impl<'a> fmt::Display for ANSIString<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let w: &mut fmt::Write = f;
@@ -276,6 +289,7 @@ impl<'a> ANSIByteString<'a> {
         self.write_to_any(w)
     }
 }
+
 
 impl<'a, I, S: 'a + ToOwned + ?Sized> From<I> for ANSIGenericString<'a, S>
 where I: Into<Cow<'a, S>>,
@@ -294,6 +308,41 @@ where <S as ToOwned>::Owned: std::fmt::Debug {
 
     fn deref(&self) -> &S {
         self.string.deref()
+    }
+}
+
+
+impl fmt::Display for Prefix {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let f: &mut fmt::Write = f;
+        try!(self.0.write_prefix(f));
+        Ok(())
+    }
+}
+
+impl fmt::Display for Suffix {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let f: &mut fmt::Write = f;
+        try!(self.0.write_suffix(f));
+        Ok(())
+    }
+}
+
+impl fmt::Display for Infix {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.0.difference(&self.1) {
+            ExtraStyles(style) => {
+                let f: &mut fmt::Write = f;
+                try!(style.write_prefix(f))
+            },
+            Reset => {
+                let f: &mut fmt::Write = f;
+                try!(f.write_str("\x1B[0m"));
+                try!(self.0.write_prefix(f));
+            },
+            NoDifference => { /* Do nothing! */ },
+        }
+        Ok(())
     }
 }
 
@@ -414,6 +463,21 @@ impl Colour {
         }
     }
 
+    /// The prefix for this colour.
+    pub fn prefix(self) -> Prefix {
+        Prefix(self.normal())
+    }
+
+    /// The suffix for this colour.
+    pub fn suffix(self) -> Suffix {
+        Suffix(self.normal())
+    }
+
+    /// The infix between this colour and another.
+    pub fn infix(self, other: Colour) -> Infix {
+        Infix(self.normal(), other.normal())
+    }
+
     /// Returns a Style with the bold property set.
     pub fn bold(self) -> Style {
         Style { foreground: Some(self), is_bold: true, .. Style::default() }
@@ -490,6 +554,21 @@ impl Style {
             string: input.into(),
             style:  self,
         }
+    }
+
+    /// The prefix for this style.
+    pub fn prefix(self) -> Prefix {
+        Prefix(self)
+    }
+
+    /// The suffix for this style.
+    pub fn suffix(self) -> Suffix {
+        Suffix(self)
+    }
+
+    /// The infix between this style and another.
+    pub fn infix(self, other: Style) -> Infix {
+        Infix(self, other)
     }
 
     /// Returns a Style with the bold property set.
