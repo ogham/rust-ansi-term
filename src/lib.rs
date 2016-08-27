@@ -191,11 +191,52 @@ pub struct ANSIString<'a> {
     style: Style,
 }
 
+/// Like `ANSIString`, but only displays the style prefix.
+#[derive(Clone, Copy, Debug)]
+pub struct Prefix(Style);
+
+/// Like `ANSIString`, but only displays the style suffix.
+#[derive(Clone, Copy, Debug)]
+pub struct Suffix(Style);
+
+/// Like `ANSIString`, but only displays the difference between two
+/// styles.
+#[derive(Clone, Copy, Debug)]
+pub struct Infix(Style, Style);
+
 impl<'a> fmt::Display for ANSIString<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(self.style.write_prefix(f));
         try!(write!(f, "{}", self.string));
         self.style.write_suffix(f)
+    }
+}
+
+impl fmt::Display for Prefix {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(self.0.write_prefix(f));
+        Ok(())
+    }
+}
+
+impl fmt::Display for Suffix {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(self.0.write_suffix(f));
+        Ok(())
+    }
+}
+
+impl fmt::Display for Infix {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.0.difference(&self.1) {
+            ExtraStyles(style) => try!(style.write_prefix(f)),
+            Reset => {
+                try!(f.write_str("\x1B[0m"));
+                try!(self.0.write_prefix(f));
+            },
+            NoDifference => { /* Do nothing! */ },
+        }
+        Ok(())
     }
 }
 
@@ -333,6 +374,21 @@ impl Colour {
         }
     }
 
+    /// The prefix for this colour.
+    pub fn prefix(self) -> Prefix {
+        Prefix(self.normal())
+    }
+
+    /// The suffix for this colour.
+    pub fn suffix(self) -> Suffix {
+        Suffix(self.normal())
+    }
+
+    /// The infix between this colour and another.
+    pub fn infix(self, other: Colour) -> Infix {
+        Infix(self.normal(), other.normal())
+    }
+
     /// Returns a Style with the bold property set.
     pub fn bold(self) -> Style {
         Style { foreground: Some(self), is_bold: true, .. Style::default() }
@@ -408,6 +464,21 @@ impl Style {
             string: input.into(),
             style:  self,
         }
+    }
+
+    /// The prefix for this style.
+    pub fn prefix(self) -> Prefix {
+        Prefix(self)
+    }
+
+    /// The suffix for this style.
+    pub fn suffix(self) -> Suffix {
+        Suffix(self)
+    }
+
+    /// The infix between this style and another.
+    pub fn infix(self, other: Style) -> Infix {
+        Infix(self, other)
     }
 
     /// Returns a Style with the bold property set.
@@ -686,27 +757,27 @@ enum Difference {
 pub struct ANSIStrings<'a>(pub &'a [ANSIString<'a>]);
 
 impl<'a> fmt::Display for ANSIStrings<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-	    let first = match self.0.first() {
-	        None => return Ok(()),
-	        Some(f) => f,
-	    };
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            let first = match self.0.first() {
+                None => return Ok(()),
+                Some(f) => f,
+            };
 
         try!(first.style.write_prefix(f));
-	    try!(write!(f, "{}", first.string));
+            try!(write!(f, "{}", first.string));
 
-	    for window in self.0.windows(2) {
-	        match window[0].style.difference(&window[1].style) {
-	            ExtraStyles(style) => try!(style.write_prefix(f)),
-	            Reset => {
+            for window in self.0.windows(2) {
+                match window[0].style.difference(&window[1].style) {
+                    ExtraStyles(style) => try!(style.write_prefix(f)),
+                    Reset => {
                     try!(f.write_str("\x1B[0m"));
                     try!(window[1].style.write_prefix(f));
-	            },
-	            NoDifference => { /* Do nothing! */ },
-	        }
+                    },
+                    NoDifference => { /* Do nothing! */ },
+                }
 
             try!(write!(f, "{}", window[1].string));
-	    }
+            }
 
         // Write the final reset string after all of the ANSIStrings have been
         // written, *except* if the last one has no styles, because it would
@@ -717,8 +788,8 @@ impl<'a> fmt::Display for ANSIStrings<'a> {
             }
         }
 
-	    Ok(())
-	}
+            Ok(())
+        }
 }
 
 #[cfg(test)]
