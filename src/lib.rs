@@ -186,30 +186,30 @@ use Colour::*;
 use Difference::*;
 
 trait AnyWrite {
-    type str : ?Sized;
+    type wstr : ?Sized;
     type Error;
     fn write_fmt(&mut self, fmt: fmt::Arguments) -> Result<(), Self::Error>;
-    fn write_str(&mut self, s: &Self::str) -> Result<(), Self::Error>;
+    fn write_str(&mut self, s: &Self::wstr) -> Result<(), Self::Error>;
 }
 
 impl<'a> AnyWrite for fmt::Write + 'a {
-    type str = str;
+    type wstr = str;
     type Error = fmt::Error;
     fn write_fmt(&mut self, fmt: fmt::Arguments) -> Result<(), Self::Error> {
         fmt::Write::write_fmt(self, fmt)
     }
-    fn write_str(&mut self, s: &Self::str) -> Result<(), Self::Error> {
+    fn write_str(&mut self, s: &Self::wstr) -> Result<(), Self::Error> {
         fmt::Write::write_str(self, s)
     }
 }
 
 impl<'a> AnyWrite for io::Write + 'a {
-    type str = [u8];
+    type wstr = [u8];
     type Error = io::Error;
     fn write_fmt(&mut self, fmt: fmt::Arguments) -> Result<(), Self::Error> {
         io::Write::write_fmt(self, fmt)
     }
-    fn write_str(&mut self, s: &Self::str) -> Result<(), Self::Error> {
+    fn write_str(&mut self, s: &Self::wstr) -> Result<(), Self::Error> {
         io::Write::write_all(self, s)
     }
 }
@@ -226,7 +226,7 @@ where <S as ToOwned>::Owned: std::fmt::Debug {
 
 impl<'a, S: 'a + ToOwned + ?Sized> ANSIGenericString<'a, S>
 where <S as ToOwned>::Owned: std::fmt::Debug {
-    fn write_to_any<W: AnyWrite<str=S> + ?Sized>(&self, w: &mut W) -> Result<(), W::Error> {
+    fn write_to_any<W: AnyWrite<wstr=S> + ?Sized>(&self, w: &mut W) -> Result<(), W::Error> {
         try!(self.style.write_prefix(w));
         try!(w.write_str(&self.string));
         self.style.write_suffix(w)
@@ -868,7 +868,7 @@ pub fn ANSIByteStrings<'a>(arg: &'a [ANSIByteString<'a>]) -> ANSIByteStrings<'a>
 
 impl<'a, S: 'a + ToOwned + ?Sized> ANSIGenericStrings<'a, S>
 where <S as ToOwned>::Owned: std::fmt::Debug {
-    fn write_to_any<W: AnyWrite<str=S> + ?Sized>(&self, w: &mut W) -> Result<(), W::Error> {
+    fn write_to_any<W: AnyWrite<wstr=S> + ?Sized>(&self, w: &mut W) -> Result<(), W::Error> {
         let first = match self.0.first() {
             None => return Ok(()),
             Some(f) => f,
