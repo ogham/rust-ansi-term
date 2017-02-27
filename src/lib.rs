@@ -920,6 +920,32 @@ impl<'a> ANSIByteStrings<'a> {
     }
 }
 
+/// Enable ansi code support on windows 10
+/// Returns a Result with the windows error code if unsuccessful
+#[cfg(windows)]
+pub fn enable_ansi_support() -> Result<(), u64> {
+    #[link(name = "kernel32")]
+    extern {
+        fn GetStdHandle(handle: u64) -> *const i32;
+        fn SetConsoleMode(handle: *const i32, mode: u32) -> bool;
+        fn GetLastError() -> u64;
+    }
+    
+    unsafe {
+        const STD_OUT_HANDLE: u64 = -11i32 as u64;
+        const ENABLE_ANSI_CODES: u32 = 7;
+        
+        let std_out_handle = GetStdHandle(STD_OUT_HANDLE);
+        let error_code = GetLastError();
+        if error_code != 0 { return Err(error_code); }
+        
+        SetConsoleMode(std_out_handle, ENABLE_ANSI_CODES);
+        let error_code = GetLastError();
+        if error_code != 0 { return Err(error_code); }
+    }
+    return Ok(());
+}
+
 #[cfg(test)]
 mod tests {
     pub use super::{Style, ANSIStrings};
