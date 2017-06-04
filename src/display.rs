@@ -76,31 +76,31 @@ impl Style {
 impl Colour {
     fn write_foreground_code<W: AnyWrite + ?Sized>(&self, f: &mut W) -> Result<(), W::Error> {
         match *self {
-            Black      => write!(f, "30"),
-            Red        => write!(f, "31"),
-            Green      => write!(f, "32"),
-            Yellow     => write!(f, "33"),
-            Blue       => write!(f, "34"),
-            Purple     => write!(f, "35"),
-            Cyan       => write!(f, "36"),
-            White      => write!(f, "37"),
-            Fixed(num) => write!(f, "38;5;{}", &num),
-            RGB(r,g,b) => write!(f, "38;2;{};{};{}", &r, &g, &b),
+            Colour::Black      => write!(f, "30"),
+            Colour::Red        => write!(f, "31"),
+            Colour::Green      => write!(f, "32"),
+            Colour::Yellow     => write!(f, "33"),
+            Colour::Blue       => write!(f, "34"),
+            Colour::Purple     => write!(f, "35"),
+            Colour::Cyan       => write!(f, "36"),
+            Colour::White      => write!(f, "37"),
+            Colour::Fixed(num) => write!(f, "38;5;{}", &num),
+            Colour::RGB(r,g,b) => write!(f, "38;2;{};{};{}", &r, &g, &b),
         }
     }
 
     fn write_background_code<W: AnyWrite + ?Sized>(&self, f: &mut W) -> Result<(), W::Error> {
         match *self {
-            Black      => write!(f, "40"),
-            Red        => write!(f, "41"),
-            Green      => write!(f, "42"),
-            Yellow     => write!(f, "43"),
-            Blue       => write!(f, "44"),
-            Purple     => write!(f, "45"),
-            Cyan       => write!(f, "46"),
-            White      => write!(f, "47"),
-            Fixed(num) => write!(f, "48;5;{}", &num),
-            RGB(r,g,b) => write!(f, "48;2;{};{};{}", &r, &g, &b),
+            Colour::Black      => write!(f, "40"),
+            Colour::Red        => write!(f, "41"),
+            Colour::Green      => write!(f, "42"),
+            Colour::Yellow     => write!(f, "43"),
+            Colour::Blue       => write!(f, "44"),
+            Colour::Purple     => write!(f, "45"),
+            Colour::Cyan       => write!(f, "46"),
+            Colour::White      => write!(f, "47"),
+            Colour::Fixed(num) => write!(f, "48;5;{}", &num),
+            Colour::RGB(r,g,b) => write!(f, "48;2;{};{};{}", &r, &g, &b),
         }
     }
 }
@@ -287,8 +287,9 @@ impl fmt::Display for Suffix {
 
 #[cfg(test)]
 mod tests {
-    pub use super::super::{Style, ANSIStrings};
-    pub use super::Colour::*;
+    pub use super::super::ANSIStrings;
+    pub use style::Style;
+    pub use colour::Colour::*;
 
     macro_rules! test {
         ($name: ident: $style: expr; $input: expr => $result: expr) => {

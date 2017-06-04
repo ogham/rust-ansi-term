@@ -142,7 +142,7 @@ impl Style {
 mod test {
     use super::*;
     use super::Difference::*;
-    use super::super::Colour::*;
+    use colour::Colour::*;
 
     #[test]
     fn diff() {
