@@ -177,11 +177,10 @@
 
 use std::borrow::Cow;
 use std::default::Default;
-use std::io;
 use std::ops::Deref;
 
-mod colour;
-pub use colour::Colour;
+mod style;
+pub use style::{Colour, Style};
 
 /// Color is a type alias for Colour for those who can't be bothered.
 pub use Colour as Color;
@@ -192,18 +191,11 @@ pub use Colour as Color;
 //
 // Only *after* they'd installed it.
 
-mod style;
-pub use style::Style;
-
 mod difference;
-use difference::Difference;
-
 mod display;
 pub use display::{Prefix, Infix, Suffix};
 
 mod write;
-use write::AnyWrite;
-
 
 /// An ANSIGenericString includes a generic string type and a Style to
 /// display that string.  ANSIString and ANSIByteString are aliases for

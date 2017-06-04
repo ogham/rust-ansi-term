@@ -1,6 +1,10 @@
 use std::fmt;
-use super::*;
+use std::io;
+use style::{Style, Colour};
 
+use difference::Difference;
+use write::AnyWrite;
+use super::{ANSIGenericStrings, ANSIString, ANSIStrings, ANSIGenericString, ANSIByteString, ANSIByteStrings};
 
 // ---- generating ANSI codes ----
 
@@ -125,7 +129,7 @@ impl<'a> ANSIByteString<'a> {
 }
 
 impl<'a, S: 'a + ToOwned + ?Sized> ANSIGenericString<'a, S>
-where <S as ToOwned>::Owned: std::fmt::Debug {
+where <S as ToOwned>::Owned: fmt::Debug {
     fn write_to_any<W: AnyWrite<wstr=S> + ?Sized>(&self, w: &mut W) -> Result<(), W::Error> {
         try!(self.style.write_prefix(w));
         try!(w.write_str(&self.string));
@@ -154,7 +158,7 @@ impl<'a> ANSIByteStrings<'a> {
 }
 
 impl<'a, S: 'a + ToOwned + ?Sized> ANSIGenericStrings<'a, S>
-where <S as ToOwned>::Owned: std::fmt::Debug {
+where <S as ToOwned>::Owned: fmt::Debug {
     fn write_to_any<W: AnyWrite<wstr=S> + ?Sized>(&self, w: &mut W) -> Result<(), W::Error> {
         let first = match self.0.first() {
             None => return Ok(()),
@@ -289,7 +293,7 @@ impl fmt::Display for Suffix {
 mod tests {
     pub use super::super::ANSIStrings;
     pub use style::Style;
-    pub use colour::Colour::*;
+    pub use style::Colour::*;
 
     macro_rules! test {
         ($name: ident: $style: expr; $input: expr => $result: expr) => {
