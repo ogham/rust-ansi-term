@@ -44,10 +44,10 @@ use std::string::ToString;
 let red_string = Red.paint("a red string").to_string();
 ```
 
-Note for windows 10 users:: On windows 10 the application must enable ansi support.
+**Note for Windows 10 users:** On Windows 10, the application must enable ANSI support first:
 
 ```rust
-let maybe_error_code = ansi_term::enable_ansi_support();
+let enabled = ansi_term::enable_ansi_support();
 ```
 
 ## Bold, underline, background, and other styles
