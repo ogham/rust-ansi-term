@@ -34,6 +34,25 @@ impl Style {
     }
 }
 
+
+impl Colour {
+
+    /// The prefix for this colour.
+    pub fn prefix(self) -> Prefix {
+        Prefix(self.normal())
+    }
+
+    /// The suffix for this colour.
+    pub fn suffix(self) -> Suffix {
+        Suffix(self.normal())
+    }
+
+    /// The infix between this colour and another.
+    pub fn infix(self, other: Colour) -> Infix {
+        Infix(self.normal(), other.normal())
+    }
+}
+
 impl Style {
 
     /// Write any ANSI codes that go *before* a piece of text. These should be

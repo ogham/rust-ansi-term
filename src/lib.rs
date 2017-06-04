@@ -187,6 +187,7 @@ mod difference;
 use difference::Difference;
 
 mod display;
+pub use display::{Prefix, Infix, Suffix};
 
 mod write;
 use write::AnyWrite;
@@ -230,19 +231,6 @@ pub type ANSIString<'a> = ANSIGenericString<'a, str>;
 /// An ANSIByteString represents a formatted series of bytes.  Use
 /// ANSIByteString when styling text with an unknown encoding.
 pub type ANSIByteString<'a> = ANSIGenericString<'a, [u8]>;
-
-/// Like `ANSIString`, but only displays the style prefix.
-#[derive(Clone, Copy, Debug)]
-pub struct Prefix(Style);
-
-/// Like `ANSIString`, but only displays the style suffix.
-#[derive(Clone, Copy, Debug)]
-pub struct Suffix(Style);
-
-/// Like `ANSIString`, but only displays the difference between two
-/// styles.
-#[derive(Clone, Copy, Debug)]
-pub struct Infix(Style, Style);
 
 
 
@@ -353,21 +341,6 @@ impl Colour {
             string: input.into(),
             style:  self.normal(),
         }
-    }
-
-    /// The prefix for this colour.
-    pub fn prefix(self) -> Prefix {
-        Prefix(self.normal())
-    }
-
-    /// The suffix for this colour.
-    pub fn suffix(self) -> Suffix {
-        Suffix(self.normal())
-    }
-
-    /// The infix between this colour and another.
-    pub fn infix(self, other: Colour) -> Infix {
-        Infix(self.normal(), other.normal())
     }
 
     /// Returns a Style with the bold property set.
