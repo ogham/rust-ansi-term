@@ -183,7 +183,11 @@ use std::ops::Deref;
 
 use Colour::*;
 
+mod difference;
+use difference::Difference;
+
 mod display;
+
 mod write;
 use write::AnyWrite;
 
