@@ -1,6 +1,6 @@
 /// A style is a collection of properties that can format a string
 /// using ANSI escape codes.
-#[derive(PartialEq, Clone, Copy, Debug)]
+#[derive(PartialEq, Clone, Copy)]
 pub struct Style {
 
     /// The style's foreground colour, if it has one.
