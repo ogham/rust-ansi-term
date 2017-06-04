@@ -1,11 +1,3 @@
-use std::borrow::Cow;
-use std::fmt;
-
-use super::ANSIGenericString;
-
-
-// ---- styles ----
-
 /// A style is a collection of properties that can format a string
 /// using ANSI escape codes.
 #[derive(PartialEq, Clone, Copy, Debug)]
@@ -46,16 +38,6 @@ impl Style {
     /// Creates a new Style with no differences.
     pub fn new() -> Style {
         Style::default()
-    }
-
-    /// Paints the given text with this colour, returning an ANSI string.
-    pub fn paint<'a, I, S: 'a + ToOwned + ?Sized>(self, input: I) -> ANSIGenericString<'a, S>
-    where I: Into<Cow<'a, S>>,
-          <S as ToOwned>::Owned: fmt::Debug {
-        ANSIGenericString {
-            string: input.into(),
-            style:  self,
-        }
     }
 
     /// Returns a Style with the bold property set.
@@ -199,18 +181,6 @@ impl Colour {
     /// Return a Style with the foreground colour set to this colour.
     pub fn normal(self) -> Style {
         Style { foreground: Some(self), .. Style::default() }
-    }
-
-    /// Paints the given text with this colour, returning an ANSI string.
-    /// This is a short-cut so you don't have to use Blue.normal() just
-    /// to get blue text.
-    pub fn paint<'a, I, S: 'a + ToOwned + ?Sized>(self, input: I) -> ANSIGenericString<'a, S>
-    where I: Into<Cow<'a, S>>,
-          <S as ToOwned>::Owned: fmt::Debug {
-        ANSIGenericString {
-            string: input.into(),
-            style:  self.normal(),
-        }
     }
 
     /// Returns a Style with the bold property set.

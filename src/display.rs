@@ -1,10 +1,130 @@
+use std::borrow::Cow;
 use std::fmt;
 use std::io;
+use std::ops::Deref;
 
-use difference::Difference;
-use write::AnyWrite;
 use ansi::RESET;
-use super::{ANSIGenericStrings, ANSIString, ANSIStrings, ANSIGenericString, ANSIByteString, ANSIByteStrings};
+use difference::Difference;
+use style::{Style, Colour};
+use write::AnyWrite;
+
+
+/// An ANSIGenericString includes a generic string type and a Style to
+/// display that string.  ANSIString and ANSIByteString are aliases for
+/// this type on str and [u8], respectively.
+#[derive(PartialEq, Debug, Clone)]
+pub struct ANSIGenericString<'a, S: 'a + ToOwned + ?Sized>
+where <S as ToOwned>::Owned: fmt::Debug {
+    style: Style,
+    string: Cow<'a, S>,
+}
+
+/// An ANSI String is a string coupled with the Style to display it
+/// in a terminal.
+///
+/// Although not technically a string itself, it can be turned into
+/// one with the `to_string` method.
+///
+/// ### Examples
+///
+/// ```no_run
+/// use ansi_term::ANSIString;
+/// use ansi_term::Colour::Red;
+///
+/// let red_string = Red.paint("a red string");
+/// println!("{}", red_string);
+/// ```
+///
+/// ```
+/// use ansi_term::ANSIString;
+///
+/// let plain_string = ANSIString::from("a plain string");
+/// assert_eq!(&*plain_string, "a plain string");
+/// ```
+pub type ANSIString<'a> = ANSIGenericString<'a, str>;
+
+/// An ANSIByteString represents a formatted series of bytes.  Use
+/// ANSIByteString when styling text with an unknown encoding.
+pub type ANSIByteString<'a> = ANSIGenericString<'a, [u8]>;
+
+impl<'a, I, S: 'a + ToOwned + ?Sized> From<I> for ANSIGenericString<'a, S>
+where I: Into<Cow<'a, S>>,
+      <S as ToOwned>::Owned: fmt::Debug {
+    fn from(input: I) -> ANSIGenericString<'a, S> {
+        ANSIGenericString {
+            string: input.into(),
+            style:  Style::default(),
+        }
+    }
+}
+
+impl<'a, S: 'a + ToOwned + ?Sized> Deref for ANSIGenericString<'a, S>
+where <S as ToOwned>::Owned: fmt::Debug {
+    type Target = S;
+
+    fn deref(&self) -> &S {
+        self.string.deref()
+    }
+}
+
+
+/// A set of `ANSIGenericString`s collected together, in order to be
+/// written with a minimum of control characters.
+pub struct ANSIGenericStrings<'a, S: 'a + ToOwned + ?Sized>
+    (pub &'a [ANSIGenericString<'a, S>])
+    where <S as ToOwned>::Owned: fmt::Debug;
+
+/// A set of `ANSIString`s collected together, in order to be written with a
+/// minimum of control characters.
+pub type ANSIStrings<'a> = ANSIGenericStrings<'a, str>;
+
+/// A function to construct an ANSIStrings instance.
+#[allow(non_snake_case)]
+pub fn ANSIStrings<'a>(arg: &'a [ANSIString<'a>]) -> ANSIStrings<'a> {
+    ANSIGenericStrings(arg)
+}
+
+/// A set of `ANSIByteString`s collected together, in order to be
+/// written with a minimum of control characters.
+pub type ANSIByteStrings<'a> = ANSIGenericStrings<'a, [u8]>;
+
+/// A function to construct an ANSIByteStrings instance.
+#[allow(non_snake_case)]
+pub fn ANSIByteStrings<'a>(arg: &'a [ANSIByteString<'a>]) -> ANSIByteStrings<'a> {
+    ANSIGenericStrings(arg)
+}
+
+
+// ---- paint functions ----
+
+impl Style {
+
+    /// Paints the given text with this colour, returning an ANSI string.
+    pub fn paint<'a, I, S: 'a + ToOwned + ?Sized>(self, input: I) -> ANSIGenericString<'a, S>
+    where I: Into<Cow<'a, S>>,
+          <S as ToOwned>::Owned: fmt::Debug {
+        ANSIGenericString {
+            string: input.into(),
+            style:  self,
+        }
+    }
+}
+
+
+impl Colour {
+
+    /// Paints the given text with this colour, returning an ANSI string.
+    /// This is a short-cut so you don't have to use Blue.normal() just
+    /// to get blue text.
+    pub fn paint<'a, I, S: 'a + ToOwned + ?Sized>(self, input: I) -> ANSIGenericString<'a, S>
+    where I: Into<Cow<'a, S>>,
+          <S as ToOwned>::Owned: fmt::Debug {
+        ANSIGenericString {
+            string: input.into(),
+            style:  self.normal(),
+        }
+    }
+}
 
 
 // ---- writers for individual ANSI strings ----
