@@ -68,7 +68,7 @@ where <S as ToOwned>::Owned: fmt::Debug, &'a S: AsRef<[u8]> {
         w.write_str(first.string.as_ref())?;
 
         for window in self.0.windows(2) {
-            match window[0].style.difference(&window[1].style) {
+            match Difference::between(&window[0].style, &window[1].style) {
                 ExtraStyles(style) => write!(w, "{}", style.prefix())?,
                 Reset              => write!(w, "{}{}", RESET, window[1].style.prefix())?,
                 NoDifference       => {/* Do nothing! */},

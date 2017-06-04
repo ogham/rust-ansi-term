@@ -178,7 +178,7 @@ impl fmt::Display for Infix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use difference::Difference;
 
-        match self.0.difference(&self.1) {
+        match Difference::between(&self.0, &self.1) {
             Difference::ExtraStyles(style) => {
                 let f: &mut fmt::Write = f;
                 style.write_prefix(f)
