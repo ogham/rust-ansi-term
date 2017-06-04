@@ -197,6 +197,10 @@ pub use display::{Prefix, Infix, Suffix};
 
 mod write;
 
+mod windows;
+pub use windows::*;
+
+
 /// An ANSIGenericString includes a generic string type and a Style to
 /// display that string.  ANSIString and ANSIByteString are aliases for
 /// this type on str and [u8], respectively.
@@ -280,32 +284,4 @@ pub type ANSIByteStrings<'a> = ANSIGenericStrings<'a, [u8]>;
 #[allow(non_snake_case)]
 pub fn ANSIByteStrings<'a>(arg: &'a [ANSIByteString<'a>]) -> ANSIByteStrings<'a> {
     ANSIGenericStrings(arg)
-}
-
-
-
-/// Enable ansi code support on windows 10
-/// Returns a Result with the windows error code if unsuccessful
-#[cfg(windows)]
-pub fn enable_ansi_support() -> Result<(), u64> {
-    #[link(name = "kernel32")]
-    extern {
-        fn GetStdHandle(handle: u64) -> *const i32;
-        fn SetConsoleMode(handle: *const i32, mode: u32) -> bool;
-        fn GetLastError() -> u64;
-    }
-
-    unsafe {
-        const STD_OUT_HANDLE: u64 = -11i32 as u64;
-        const ENABLE_ANSI_CODES: u32 = 7;
-
-        let std_out_handle = GetStdHandle(STD_OUT_HANDLE);
-        let error_code = GetLastError();
-        if error_code != 0 { return Err(error_code); }
-
-        SetConsoleMode(std_out_handle, ENABLE_ANSI_CODES);
-        let error_code = GetLastError();
-        if error_code != 0 { return Err(error_code); }
-    }
-    return Ok(());
 }
