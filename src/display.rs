@@ -2,56 +2,7 @@ use std::fmt;
 use super::*;
 
 
-/// Like `ANSIString`, but only displays the style prefix.
-#[derive(Clone, Copy, Debug)]
-pub struct Prefix(Style);
-
-/// Like `ANSIString`, but only displays the style suffix.
-#[derive(Clone, Copy, Debug)]
-pub struct Suffix(Style);
-
-/// Like `ANSIString`, but only displays the difference between two
-/// styles.
-#[derive(Clone, Copy, Debug)]
-pub struct Infix(Style, Style);
-
-
-impl Style {
-
-    /// The prefix for this style.
-    pub fn prefix(self) -> Prefix {
-        Prefix(self)
-    }
-
-    /// The suffix for this style.
-    pub fn suffix(self) -> Suffix {
-        Suffix(self)
-    }
-
-    /// The infix between this style and another.
-    pub fn infix(self, other: Style) -> Infix {
-        Infix(self, other)
-    }
-}
-
-
-impl Colour {
-
-    /// The prefix for this colour.
-    pub fn prefix(self) -> Prefix {
-        Prefix(self.normal())
-    }
-
-    /// The suffix for this colour.
-    pub fn suffix(self) -> Suffix {
-        Suffix(self.normal())
-    }
-
-    /// The infix between this colour and another.
-    pub fn infix(self, other: Colour) -> Infix {
-        Infix(self.normal(), other.normal())
-    }
-}
+// ---- generating ANSI codes ----
 
 impl Style {
 
@@ -122,42 +73,6 @@ impl Style {
 }
 
 
-impl fmt::Display for Prefix {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let f: &mut fmt::Write = f;
-        try!(self.0.write_prefix(f));
-        Ok(())
-    }
-}
-
-impl fmt::Display for Suffix {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let f: &mut fmt::Write = f;
-        try!(self.0.write_suffix(f));
-        Ok(())
-    }
-}
-
-impl fmt::Display for Infix {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.0.difference(&self.1) {
-            Difference::ExtraStyles(style) => {
-                let f: &mut fmt::Write = f;
-                try!(style.write_prefix(f))
-            },
-            Difference::Reset => {
-                let f: &mut fmt::Write = f;
-                try!(f.write_str("\x1B[0m"));
-                try!(self.0.write_prefix(f));
-            },
-            Difference::NoDifference => { /* Do nothing! */ },
-        }
-
-        Ok(())
-    }
-}
-
-
 impl Colour {
     fn write_foreground_code<W: AnyWrite + ?Sized>(&self, f: &mut W) -> Result<(), W::Error> {
         match *self {
@@ -190,6 +105,53 @@ impl Colour {
     }
 }
 
+
+// ---- writers for individual ANSI strings ----
+
+impl<'a> fmt::Display for ANSIString<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let w: &mut fmt::Write = f;
+        self.write_to_any(w)
+    }
+}
+
+impl<'a> ANSIByteString<'a> {
+    /// Write an ANSIByteString to an io::Write.  This writes the escape
+    /// sequences for the associated Style around the bytes.
+    pub fn write_to<W: io::Write>(&self, w: &mut W) -> io::Result<()> {
+        let w: &mut io::Write = w;
+        self.write_to_any(w)
+    }
+}
+
+impl<'a, S: 'a + ToOwned + ?Sized> ANSIGenericString<'a, S>
+where <S as ToOwned>::Owned: std::fmt::Debug {
+    fn write_to_any<W: AnyWrite<wstr=S> + ?Sized>(&self, w: &mut W) -> Result<(), W::Error> {
+        try!(self.style.write_prefix(w));
+        try!(w.write_str(&self.string));
+        self.style.write_suffix(w)
+    }
+}
+
+
+// ---- writers for combined ANSI strings ----
+
+impl<'a> fmt::Display for ANSIStrings<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let f: &mut fmt::Write = f;
+        self.write_to_any(f)
+    }
+}
+
+impl<'a> ANSIByteStrings<'a> {
+    /// Write ANSIByteStrings to an io::Write.  This writes the minimal
+    /// escape sequences for the associated Styles around each set of
+    /// bytes.
+    pub fn write_to<W: io::Write>(&self, w: &mut W) -> io::Result<()> {
+        let w: &mut io::Write = w;
+        self.write_to_any(w)
+    }
+}
 
 impl<'a, S: 'a + ToOwned + ?Sized> ANSIGenericStrings<'a, S>
 where <S as ToOwned>::Owned: std::fmt::Debug {
@@ -228,48 +190,100 @@ where <S as ToOwned>::Owned: std::fmt::Debug {
     }
 }
 
-impl<'a> fmt::Display for ANSIStrings<'a> {
+
+// ---- special structs for printing out style parts ----
+
+/// Like `ANSIString`, but only displays the style prefix.
+#[derive(Clone, Copy, Debug)]
+pub struct Prefix(Style);
+
+/// Like `ANSIString`, but only displays the difference between two
+/// styles.
+#[derive(Clone, Copy, Debug)]
+pub struct Infix(Style, Style);
+
+/// Like `ANSIString`, but only displays the style suffix.
+#[derive(Clone, Copy, Debug)]
+pub struct Suffix(Style);
+
+
+impl Style {
+
+    /// The prefix for this style.
+    pub fn prefix(self) -> Prefix {
+        Prefix(self)
+    }
+
+    /// The infix between this style and another.
+    pub fn infix(self, other: Style) -> Infix {
+        Infix(self, other)
+    }
+
+    /// The suffix for this style.
+    pub fn suffix(self) -> Suffix {
+        Suffix(self)
+    }
+}
+
+
+impl Colour {
+
+    /// The prefix for this colour.
+    pub fn prefix(self) -> Prefix {
+        Prefix(self.normal())
+    }
+
+    /// The infix between this colour and another.
+    pub fn infix(self, other: Colour) -> Infix {
+        Infix(self.normal(), other.normal())
+    }
+
+    /// The suffix for this colour.
+    pub fn suffix(self) -> Suffix {
+        Suffix(self.normal())
+    }
+}
+
+
+impl fmt::Display for Prefix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let f: &mut fmt::Write = f;
-        self.write_to_any(f)
+        try!(self.0.write_prefix(f));
+        Ok(())
     }
 }
 
-impl<'a, S: 'a + ToOwned + ?Sized> ANSIGenericString<'a, S>
-where <S as ToOwned>::Owned: std::fmt::Debug {
-    fn write_to_any<W: AnyWrite<wstr=S> + ?Sized>(&self, w: &mut W) -> Result<(), W::Error> {
-        try!(self.style.write_prefix(w));
-        try!(w.write_str(&self.string));
-        self.style.write_suffix(w)
-    }
-}
 
-impl<'a> fmt::Display for ANSIString<'a> {
+impl fmt::Display for Infix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let w: &mut fmt::Write = f;
-        self.write_to_any(w)
+        match self.0.difference(&self.1) {
+            Difference::ExtraStyles(style) => {
+                let f: &mut fmt::Write = f;
+                try!(style.write_prefix(f))
+            },
+            Difference::Reset => {
+                let f: &mut fmt::Write = f;
+                try!(f.write_str("\x1B[0m"));
+                try!(self.0.write_prefix(f));
+            },
+            Difference::NoDifference => { /* Do nothing! */ },
+        }
+
+        Ok(())
     }
 }
 
-impl<'a> ANSIByteString<'a> {
-    /// Write an ANSIByteString to an io::Write.  This writes the escape
-    /// sequences for the associated Style around the bytes.
-    pub fn write_to<W: io::Write>(&self, w: &mut W) -> io::Result<()> {
-        let w: &mut io::Write = w;
-        self.write_to_any(w)
+
+impl fmt::Display for Suffix {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let f: &mut fmt::Write = f;
+        try!(self.0.write_suffix(f));
+        Ok(())
     }
 }
 
-impl<'a> ANSIByteStrings<'a> {
-    /// Write ANSIByteStrings to an io::Write.  This writes the minimal
-    /// escape sequences for the associated Styles around each set of
-    /// bytes.
-    pub fn write_to<W: io::Write>(&self, w: &mut W) -> io::Result<()> {
-        let w: &mut io::Write = w;
-        self.write_to_any(w)
-    }
-}
 
+// ---- tests ----
 
 #[cfg(test)]
 mod tests {
