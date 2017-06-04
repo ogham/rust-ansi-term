@@ -179,6 +179,9 @@ use std::borrow::Cow;
 use std::default::Default;
 use std::ops::Deref;
 
+mod ansi;
+pub use ansi::{Prefix, Infix, Suffix};
+
 mod style;
 pub use style::{Colour, Style};
 
@@ -193,7 +196,6 @@ pub use Colour as Color;
 
 mod difference;
 mod display;
-pub use display::{Prefix, Infix, Suffix};
 
 mod write;
 
