@@ -70,10 +70,15 @@ impl Style {
             Ok(())
         }
         else {
-            write!(f, "\x1B[0m")
+            write!(f, "{}", RESET)
         }
     }
 }
+
+
+/// The code to send to reset all styles and return to `Style::default()`.
+pub static RESET: &str = "\x1B[0m";
+
 
 
 impl Colour {
@@ -180,7 +185,7 @@ impl fmt::Display for Infix {
             },
             Difference::Reset => {
                 let f: &mut fmt::Write = f;
-                write!(f, "\x1B[0m{}", self.0.prefix())
+                write!(f, "{}{}", RESET, self.0.prefix())
             },
             Difference::NoDifference => {
                 Ok(())   // nothing to write

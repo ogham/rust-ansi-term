@@ -3,6 +3,7 @@ use std::io;
 
 use difference::Difference;
 use write::AnyWrite;
+use ansi::RESET;
 use super::{ANSIGenericStrings, ANSIString, ANSIStrings, ANSIGenericString, ANSIByteString, ANSIByteStrings};
 
 
@@ -69,7 +70,7 @@ where <S as ToOwned>::Owned: fmt::Debug, &'a S: AsRef<[u8]> {
         for window in self.0.windows(2) {
             match window[0].style.difference(&window[1].style) {
                 ExtraStyles(style) => write!(w, "{}", style.prefix())?,
-                Reset              => write!(w, "\x1B[0m{}", window[1].style.prefix())?,
+                Reset              => write!(w, "{}{}", RESET, window[1].style.prefix())?,
                 NoDifference       => {/* Do nothing! */},
             }
 
@@ -81,7 +82,7 @@ where <S as ToOwned>::Owned: fmt::Debug, &'a S: AsRef<[u8]> {
         // have already been written by this point.
         if let Some(last) = self.0.last() {
             if !last.style.is_plain() {
-                write!(w, "\x1B[0m")?;
+                write!(w, "{}", RESET)?;
             }
         }
 
