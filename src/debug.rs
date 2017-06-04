@@ -3,6 +3,15 @@ use std::fmt;
 use style::Style;
 
 
+/// Styles have a special `Debug` implementation that only shows the fields that
+/// are set. Fields that haven’t been touched aren’t included in the output.
+///
+/// This behaviour gets bypassed when using the alternate formatting mode
+/// `format!("{:#?}")`.
+///
+///     use ansi_term::Colour::{Red, Blue};
+///     assert_eq!("Style { fg(Red), on(Blue), bold, italic }",
+///                format!("{:?}", Red.on(Blue).bold().italic()));
 impl fmt::Debug for Style {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         if fmt.alternate() {
