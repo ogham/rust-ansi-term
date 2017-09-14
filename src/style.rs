@@ -98,6 +98,17 @@ impl Style {
 }
 
 impl Default for Style {
+
+    /// Returns a style with *no* properties set. Formatting text using this
+    /// style returns the exact same text.
+    ///
+    /// ```
+    /// use ansi_term::Style;
+    /// assert_eq!(None,  Style::default().foreground);
+    /// assert_eq!(None,  Style::default().background);
+    /// assert_eq!(false, Style::default().is_bold);
+    /// assert_eq!("txt", Style::default().paint("txt").to_string());
+    /// ```
     fn default() -> Style {
         Style {
             foreground: None,
