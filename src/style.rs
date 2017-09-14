@@ -228,3 +228,20 @@ impl Colour {
         Style { foreground: Some(self), background: Some(background), .. Style::default() }
     }
 }
+
+impl From<Colour> for Style {
+
+    /// You can turn a `Colour` into a `Style` with the foreground colour set
+    /// with the `From` trait.
+    ///
+    /// ```
+    /// use ansi_term::{Style, Colour};
+    /// let green_foreground = Style::default().fg(Colour::Green);
+    /// assert_eq!(green_foreground, Colour::Green.normal());
+    /// assert_eq!(green_foreground, Colour::Green.into());
+    /// assert_eq!(green_foreground, Style::from(Colour::Green));
+    /// ```
+    fn from(colour: Colour) -> Style {
+        colour.normal()
+    }
+}
