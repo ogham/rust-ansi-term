@@ -114,8 +114,13 @@ impl Style {
 impl Colour {
 
     /// Paints the given text with this colour, returning an ANSI string.
-    /// This is a short-cut so you don't have to use Blue.normal() just
+    /// This is a short-cut so you don’t have to use `Blue.normal()` just
     /// to get blue text.
+    ///
+    /// ```
+    /// use ansi_term::Colour::Blue;
+    /// println!("{}", Blue.paint("da ba dee"));
+    /// ```
     pub fn paint<'a, I, S: 'a + ToOwned + ?Sized>(self, input: I) -> ANSIGenericString<'a, S>
     where I: Into<Cow<'a, S>>,
           <S as ToOwned>::Owned: fmt::Debug {
