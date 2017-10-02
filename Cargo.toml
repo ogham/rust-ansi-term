@@ -7,7 +7,7 @@ documentation = "https://docs.rs/ansi_term"
 homepage = "https://github.com/ogham/rust-ansi-term"
 license = "MIT"
 readme = "README.md"
-version = "0.10.1"
+version = "0.10.2"
 
 [lib]
 name = "ansi_term"

@@ -12,12 +12,57 @@ use write::AnyWrite;
 /// An ANSIGenericString includes a generic string type and a Style to
 /// display that string.  ANSIString and ANSIByteString are aliases for
 /// this type on str and [u8], respectively.
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug)]
 pub struct ANSIGenericString<'a, S: 'a + ToOwned + ?Sized>
 where <S as ToOwned>::Owned: fmt::Debug {
     style: Style,
     string: Cow<'a, S>,
 }
+
+
+/// Cloning an ANSIGenericString will clone its underlying string.
+///
+/// ### Examples
+///
+/// ```
+/// use ansi_term::ANSIString;
+///
+/// let plain_string = ANSIString::from("a plain string");
+/// let clone_string = plain_string.clone();
+/// assert_eq!(clone_string, plain_string);
+/// ```
+impl<'a, S: 'a + ToOwned + ?Sized> Clone for ANSIGenericString<'a, S>
+where <S as ToOwned>::Owned: fmt::Debug {
+    fn clone(&self) -> ANSIGenericString<'a, S> {
+        ANSIGenericString {
+            style: self.style.clone(),
+            string: self.string.clone(),
+        }
+    }
+}
+
+// You might think that the hand-written Clone impl above is the same as the
+// one that gets generated with #[derive]. But it’s not *quite* the same!
+//
+// `str` is not Clone, and the derived Clone implementation puts a Clone
+// constraint on the S type parameter (generated using --pretty=expanded):
+//
+//                  ↓_________________↓
+//     impl <'a, S: ::std::clone::Clone + 'a + ToOwned + ?Sized> ::std::clone::Clone
+//     for ANSIGenericString<'a, S> where
+//     <S as ToOwned>::Owned: fmt::Debug { ... }
+//
+// This resulted in compile errors when you tried to derive Clone on a type
+// that used it:
+//
+//     #[derive(PartialEq, Debug, Clone, Default)]
+//     pub struct TextCellContents(Vec<ANSIString<'static>>);
+//                                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+//     error[E0277]: the trait `std::clone::Clone` is not implemented for `str`
+//
+// The hand-written impl above can ignore that constraint and still compile.
+
+
 
 /// An ANSI String is a string coupled with the Style to display it
 /// in a terminal.
