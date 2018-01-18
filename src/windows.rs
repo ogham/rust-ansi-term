@@ -7,17 +7,13 @@
 ///
 /// Returns a `Result` with the Windows error code if unsuccessful.
 #[cfg(windows)]
-pub fn enable_ansi_support() -> Result<(), u64> {
-
-    #[link(name = "kernel32")]
-    extern {
-        fn GetStdHandle(handle: u64) -> *const i32;
-        fn SetConsoleMode(handle: *const i32, mode: u32) -> bool;
-        fn GetLastError() -> u64;
-    }
+pub fn enable_ansi_support() -> Result<(), u32> {
+    use winapi::um::processenv::GetStdHandle;
+    use winapi::um::errhandlingapi::GetLastError;
+    use winapi::um::consoleapi::SetConsoleMode;
 
     unsafe {
-        const STD_OUT_HANDLE: u64 = -11i32 as u64;
+        const STD_OUT_HANDLE: u32 = -11i32 as u32;
         const ENABLE_ANSI_CODES: u32 = 7;
 
         // https://msdn.microsoft.com/en-us/library/windows/desktop/ms683231(v=vs.85).aspx
