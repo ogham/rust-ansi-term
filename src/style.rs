@@ -132,7 +132,7 @@ impl Default for Style {
 /// to either the foreground or background colour.
 ///
 /// These use the standard numeric sequences.
-/// See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+/// See <http://invisible-island.net/xterm/ctlseqs/ctlseqs.html>
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum Colour {
 
@@ -180,6 +180,7 @@ pub enum Colour {
     /// - Colours 232 to 255 are shades of grey from black to white.
     ///
     /// It might make more sense to look at a [colour chart][cc].
+    ///
     /// [cc]: https://upload.wikimedia.org/wikipedia/en/1/15/Xterm_256color_chart.svg
     Fixed(u8),
 
