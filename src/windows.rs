@@ -7,17 +7,12 @@
 ///
 /// Returns a `Result` with the Windows error code if unsuccessful.
 #[cfg(windows)]
-pub fn enable_ansi_support() -> Result<(), u64> {
+pub fn enable_ansi_support() -> Result<(), u32> {
+    use winapi::um::processenv::GetStdHandle;
+    use winapi::um::errhandlingapi::GetLastError;
+    use winapi::um::consoleapi::{GetConsoleMode, SetConsoleMode};
 
-    #[link(name = "kernel32")]
-    extern {
-        fn GetStdHandle(hConsoleHandle: u64) -> *const i32;
-        fn GetConsoleMode(hConsoleHandle: *const i32, lpMode: *mut u32) -> bool;
-        fn SetConsoleMode(hConsoleHandle: *const i32, lpMode: u32) -> bool;
-        fn GetLastError() -> u64;
-    }
-
-    const STD_OUT_HANDLE: u64 = -11i32 as u64;
+    const STD_OUT_HANDLE: u32 = -11i32 as u32;
     const ENABLE_VIRTUAL_TERMINAL_PROCESSING: u32 = 0x0004;
 
     unsafe {
