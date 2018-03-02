@@ -35,7 +35,7 @@ impl<'a, S: 'a + ToOwned + ?Sized> Clone for ANSIGenericString<'a, S>
 where <S as ToOwned>::Owned: fmt::Debug {
     fn clone(&self) -> ANSIGenericString<'a, S> {
         ANSIGenericString {
-            style: self.style.clone(),
+            style: self.style,
             string: self.string.clone(),
         }
     }
