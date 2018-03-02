@@ -2,7 +2,7 @@
 
 This is a library for controlling colours and formatting, such as red bold text or blue underlined text, on ANSI terminals.
 
-### [View the Rustdoc](https://docs.rs/ansi_term/0.9.0/ansi_term/)
+### [View the Rustdoc](https://docs.rs/ansi_term/)
 
 
 # Installation
@@ -11,7 +11,7 @@ This crate works with [Cargo](http://crates.io). Add the following to your `Carg
 
 ```toml
 [dependencies]
-ansi_term = "0.9"
+ansi_term = "0.11"
 ```
 
 
