@@ -103,6 +103,20 @@ where I: Into<Cow<'a, S>>,
     }
 }
 
+impl<'a, S: 'a + ToOwned + ?Sized> ANSIGenericString<'a, S>
+    where <S as ToOwned>::Owned: fmt::Debug {
+
+    /// Directly access the style
+    pub fn style_ref(&self) -> &Style {
+        &self.style
+    }
+
+    /// Directly access the style mutably
+    pub fn style_ref_mut(&mut self) -> &mut Style {
+        &mut self.style
+    }
+}
+
 impl<'a, S: 'a + ToOwned + ?Sized> Deref for ANSIGenericString<'a, S>
 where <S as ToOwned>::Owned: fmt::Debug {
     type Target = S;
