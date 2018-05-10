@@ -181,7 +181,7 @@ pub enum Colour {
     ///
     /// It might make more sense to look at a [colour chart][cc].
     ///
-    /// [cc]: https://upload.wikimedia.org/wikipedia/en/1/15/Xterm_256color_chart.svg
+    /// [cc]: https://upload.wikimedia.org/wikipedia/commons/1/15/Xterm_256color_chart.svg
     Fixed(u8),
 
     /// A 24-bit RGB color, as specified by ISO-8613-3.
