@@ -145,6 +145,7 @@ pub fn ANSIByteStrings<'a>(arg: &'a [ANSIByteString<'a>]) -> ANSIByteStrings<'a>
 impl Style {
 
     /// Paints the given text with this colour, returning an ANSI string.
+    #[must_use]
     pub fn paint<'a, I, S: 'a + ToOwned + ?Sized>(self, input: I) -> ANSIGenericString<'a, S>
     where I: Into<Cow<'a, S>>,
           <S as ToOwned>::Owned: fmt::Debug {
@@ -166,6 +167,7 @@ impl Colour {
     /// use ansi_term::Colour::Blue;
     /// println!("{}", Blue.paint("da ba dee"));
     /// ```
+    #[must_use]
     pub fn paint<'a, I, S: 'a + ToOwned + ?Sized>(self, input: I) -> ANSIGenericString<'a, S>
     where I: Into<Cow<'a, S>>,
           <S as ToOwned>::Owned: fmt::Debug {
