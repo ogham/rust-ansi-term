@@ -202,4 +202,7 @@ mod write;
 mod windows;
 pub use windows::*;
 
+mod util;
+pub use util::*;
+
 mod debug;
