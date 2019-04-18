@@ -1,6 +1,7 @@
 /// A style is a collection of properties that can format a string
 /// using ANSI escape codes.
 #[derive(PartialEq, Clone, Copy)]
+#[cfg_attr(feature = "derive_serde_style", derive(serde::Deserialize, serde::Serialize))]
 pub struct Style {
 
     /// The style's foreground colour, if it has one.
@@ -134,6 +135,7 @@ impl Default for Style {
 /// These use the standard numeric sequences.
 /// See <http://invisible-island.net/xterm/ctlseqs/ctlseqs.html>
 #[derive(PartialEq, Clone, Copy, Debug)]
+#[cfg_attr(feature = "derive_serde_style", derive(serde::Deserialize, serde::Serialize))]
 pub enum Colour {
 
     /// Colour #0 (foreground code `30`, background code `40`).
@@ -255,5 +257,48 @@ impl From<Colour> for Style {
     /// ```
     fn from(colour: Colour) -> Style {
         colour.normal()
+    }
+}
+
+#[cfg(test)]
+#[cfg(feature = "derive_serde_style")]
+mod serde_json_tests {
+    use super::{Style, Colour};
+
+    #[test]
+    fn colour_serialization() {
+
+        let colours = &[
+            Colour::Red,
+            Colour::Blue,
+            Colour::RGB(123, 123, 123),
+            Colour::Fixed(255),
+        ];
+
+        assert_eq!(serde_json::to_string(&colours).unwrap(), String::from("[\"Red\",\"Blue\",{\"RGB\":[123,123,123]},{\"Fixed\":255}]"));
+    }
+
+    #[test]
+    fn colour_deserialization() {
+        let colours = &[
+            Colour::Red,
+            Colour::Blue,
+            Colour::RGB(123, 123, 123),
+            Colour::Fixed(255),
+        ];
+
+        for colour in colours.into_iter() {
+            let serialized = serde_json::to_string(&colour).unwrap();
+            let deserialized: Colour = serde_json::from_str(&serialized).unwrap();
+
+            assert_eq!(colour, &deserialized);
+        }
+    }
+
+    #[test]
+    fn style_serialization() {
+        let style = Style::default();
+
+        assert_eq!(serde_json::to_string(&style).unwrap(), "{\"foreground\":null,\"background\":null,\"is_bold\":false,\"is_dimmed\":false,\"is_italic\":false,\"is_underline\":false,\"is_blink\":false,\"is_reverse\":false,\"is_hidden\":false,\"is_strikethrough\":false}".to_string());
     }
 }
