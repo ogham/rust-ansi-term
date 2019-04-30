@@ -8,6 +8,7 @@ homepage = "https://github.com/ogham/rust-ansi-term"
 license = "MIT"
 readme = "README.md"
 version = "0.11.0"
+repository = "https://github.com/ogham/rust-ansi-term"
 
 [lib]
 name = "ansi_term"
