@@ -46,7 +46,7 @@ let red_string = Red.paint("a red string").to_string();
 
 **Note for Windows 10 users:** On Windows 10, the application must enable ANSI support first:
 
-```rust
+```rust,ignore
 let enabled = ansi_term::enable_ansi_support();
 ```
 
@@ -81,10 +81,10 @@ In some cases, you may find it easier to change the foreground on an existing `S
 You can do this using the `fg` method:
 
 ```rust
-    use ansi_term::Style;
-    use ansi_term::Colour::{Blue, Cyan, Yellow};
-    println!("Yellow on blue: {}", Style::new().on(Blue).fg(Yellow).paint("yow!"));
-    println!("Also yellow on blue: {}", Cyan.on(Blue).fg(Yellow).paint("zow!"));
+use ansi_term::Style;
+use ansi_term::Colour::{Blue, Cyan, Yellow};
+println!("Yellow on blue: {}", Style::new().on(Blue).fg(Yellow).paint("yow!"));
+println!("Also yellow on blue: {}", Cyan.on(Blue).fg(Yellow).paint("zow!"));
 ```
 
 Finally, you can turn a `Colour` into a `Style` with the `normal` method.
