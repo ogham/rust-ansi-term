@@ -2,7 +2,6 @@ use std::fmt;
 
 use style::Style;
 
-
 /// Styles have a special `Debug` implementation that only shows the fields that
 /// are set. Fields that haven’t been touched aren’t included in the output.
 ///
@@ -16,60 +15,68 @@ impl fmt::Debug for Style {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         if fmt.alternate() {
             fmt.debug_struct("Style")
-               .field("foreground",    &self.foreground)
-               .field("background",    &self.background)
-               .field("blink",         &self.is_blink)
-               .field("bold",          &self.is_bold)
-               .field("dimmed",        &self.is_dimmed)
-               .field("hidden",        &self.is_hidden)
-               .field("italic",        &self.is_italic)
-               .field("reverse",       &self.is_reverse)
-               .field("strikethrough", &self.is_strikethrough)
-               .field("underline",     &self.is_underline)
-               .finish()
-        }
-        else if self.is_plain() {
+                .field("foreground", &self.foreground)
+                .field("background", &self.background)
+                .field("blink", &self.is_blink)
+                .field("bold", &self.is_bold)
+                .field("dimmed", &self.is_dimmed)
+                .field("hidden", &self.is_hidden)
+                .field("italic", &self.is_italic)
+                .field("reverse", &self.is_reverse)
+                .field("strikethrough", &self.is_strikethrough)
+                .field("underline", &self.is_underline)
+                .finish()
+        } else if self.is_plain() {
             fmt.write_str("Style {}")
-        }
-        else {
+        } else {
             fmt.write_str("Style { ")?;
 
-            let mut written_anything = false;
+                        let mut parts = Vec::new();
 
             if let Some(fg) = self.foreground {
-                if written_anything { fmt.write_str(", ")? }
-                written_anything = true;
-                write!(fmt, "fg({:?})", fg)?
+                parts.push(format!("fg({:?})", fg));
             }
 
             if let Some(bg) = self.background {
-                if written_anything { fmt.write_str(", ")? }
-                written_anything = true;
-                write!(fmt, "on({:?})", bg)?
+                parts.push(format!("on({:?})", bg));
             }
 
             {
-                let mut write_flag = |name| {
-                    if written_anything { fmt.write_str(", ")? }
-                    written_anything = true;
-                    fmt.write_str(name)
+                let mut push_flag = |name| {
+                    parts.push(name);
                 };
 
-                if self.is_blink          { write_flag("blink")? }
-                if self.is_bold           { write_flag("bold")? }
-                if self.is_dimmed         { write_flag("dimmed")? }
-                if self.is_hidden         { write_flag("hidden")? }
-                if self.is_italic         { write_flag("italic")? }
-                if self.is_reverse        { write_flag("reverse")? }
-                if self.is_strikethrough  { write_flag("strikethrough")? }
-                if self.is_underline      { write_flag("underline")? }
+                if self.is_blink {
+                    push_flag("blink".to_string())
+                }
+                if self.is_bold {
+                    push_flag("bold".to_string())
+                }
+                if self.is_dimmed {
+                    push_flag("dimmed".to_string())
+                }
+                if self.is_hidden {
+                    push_flag("hidden".to_string())
+                }
+                if self.is_italic {
+                    push_flag("italic".to_string())
+                }
+                if self.is_reverse {
+                    push_flag("reverse".to_string())
+                }
+                if self.is_strikethrough {
+                    push_flag("strikethrough".to_string())
+                }
+                if self.is_underline {
+                    push_flag("underline".to_string())
+                }
             }
+            write!(fmt, "{}", parts.join(", "))?;
 
             write!(fmt, " }}")
         }
     }
 }
-
 
 #[cfg(test)]
 mod test {
