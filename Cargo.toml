@@ -12,6 +12,17 @@ version = "0.11.0"
 [lib]
 name = "ansi_term"
 
+[features]
+derive_serde_style = ["serde"]
+
+[dependencies.serde]
+version = "1.0.90"
+features = ["derive"]
+optional = true
+
 [target.'cfg(target_os="windows")'.dependencies.winapi]
 version = "0.3.4"
-features = ["errhandlingapi", "consoleapi", "processenv"]
+features = ["errhandlingapi", "consoleapi", "processenv", "handleapi"]
+
+[dev-dependencies.serde_json]
+version = "1.0.39"
