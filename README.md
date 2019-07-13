@@ -41,7 +41,6 @@ If you *do* want to get at the escape codes, then you can convert the `ANSIStrin
 
 ```rust
 use ansi_term::Colour::Red;
-use std::string::ToString;
 
 let red_string = Red.paint("a red string").to_string();
 ```

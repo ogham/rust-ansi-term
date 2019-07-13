@@ -34,7 +34,6 @@
 //!
 //! ```
 //! use ansi_term::Colour::Red;
-//! use std::string::ToString;
 //!
 //! let red_string = Red.paint("a red string").to_string();
 //! ```
