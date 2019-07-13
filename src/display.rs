@@ -103,6 +103,20 @@ where I: Into<Cow<'a, S>>,
     }
 }
 
+impl<'a, S: 'a + ToOwned + ?Sized> ANSIGenericString<'a, S>
+    where <S as ToOwned>::Owned: fmt::Debug {
+
+    /// Directly access the style
+    pub fn style_ref(&self) -> &Style {
+        &self.style
+    }
+
+    /// Directly access the style mutably
+    pub fn style_ref_mut(&mut self) -> &mut Style {
+        &mut self.style
+    }
+}
+
 impl<'a, S: 'a + ToOwned + ?Sized> Deref for ANSIGenericString<'a, S>
 where <S as ToOwned>::Owned: fmt::Debug {
     type Target = S;
@@ -115,9 +129,10 @@ where <S as ToOwned>::Owned: fmt::Debug {
 
 /// A set of `ANSIGenericString`s collected together, in order to be
 /// written with a minimum of control characters.
+#[derive(Debug, PartialEq)]
 pub struct ANSIGenericStrings<'a, S: 'a + ToOwned + ?Sized>
     (pub &'a [ANSIGenericString<'a, S>])
-    where <S as ToOwned>::Owned: fmt::Debug;
+    where <S as ToOwned>::Owned: fmt::Debug, S: PartialEq;
 
 /// A set of `ANSIString`s collected together, in order to be written with a
 /// minimum of control characters.
@@ -226,7 +241,7 @@ impl<'a> ANSIByteStrings<'a> {
     }
 }
 
-impl<'a, S: 'a + ToOwned + ?Sized> ANSIGenericStrings<'a, S>
+impl<'a, S: 'a + ToOwned + ?Sized + PartialEq> ANSIGenericStrings<'a, S>
 where <S as ToOwned>::Owned: fmt::Debug, &'a S: AsRef<[u8]> {
     fn write_to_any<W: AnyWrite<wstr=S> + ?Sized>(&self, w: &mut W) -> Result<(), W::Error> {
         use self::Difference::*;
