@@ -8,6 +8,7 @@ homepage = "https://github.com/ogham/rust-ansi-term"
 license = "MIT"
 readme = "README.md"
 version = "0.11.0"
+repository = "https://github.com/ogham/rust-ansi-term"
 
 [lib]
 name = "ansi_term"
@@ -23,6 +24,9 @@ optional = true
 [target.'cfg(target_os="windows")'.dependencies.winapi]
 version = "0.3.4"
 features = ["errhandlingapi", "consoleapi", "processenv", "handleapi"]
+
+[dev-dependencies]
+doc-comment = "0.3"
 
 [dev-dependencies.serde_json]
 version = "1.0.39"
