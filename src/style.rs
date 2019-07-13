@@ -36,63 +36,171 @@ pub struct Style {
 }
 
 impl Style {
-    /// Creates a new Style with no differences.
+
+    /// Creates a new Style with no properties set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Style;
+    ///
+    /// let style = Style::new();
+    /// println!("{}", style.paint("hi"));
+    /// ```
     pub fn new() -> Style {
         Style::default()
     }
 
     /// Returns a `Style` with the bold property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Style;
+    ///
+    /// let style = Style::new().bold();
+    /// println!("{}", style.paint("hey"));
+    /// ```
     pub fn bold(&self) -> Style {
         Style { is_bold: true, .. *self }
     }
 
     /// Returns a `Style` with the dimmed property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Style;
+    ///
+    /// let style = Style::new().dimmed();
+    /// println!("{}", style.paint("sup"));
+    /// ```
     pub fn dimmed(&self) -> Style {
         Style { is_dimmed: true, .. *self }
     }
 
     /// Returns a `Style` with the italic property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Style;
+    ///
+    /// let style = Style::new().italic();
+    /// println!("{}", style.paint("greetings"));
+    /// ```
     pub fn italic(&self) -> Style {
         Style { is_italic: true, .. *self }
     }
 
     /// Returns a `Style` with the underline property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Style;
+    ///
+    /// let style = Style::new().underline();
+    /// println!("{}", style.paint("salutations"));
+    /// ```
     pub fn underline(&self) -> Style {
         Style { is_underline: true, .. *self }
     }
 
     /// Returns a `Style` with the blink property set.
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Style;
+    ///
+    /// let style = Style::new().blink();
+    /// println!("{}", style.paint("wazzup"));
+    /// ```
     pub fn blink(&self) -> Style {
         Style { is_blink: true, .. *self }
     }
 
     /// Returns a `Style` with the reverse property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Style;
+    ///
+    /// let style = Style::new().reverse();
+    /// println!("{}", style.paint("aloha"));
+    /// ```
     pub fn reverse(&self) -> Style {
         Style { is_reverse: true, .. *self }
     }
 
     /// Returns a `Style` with the hidden property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Style;
+    ///
+    /// let style = Style::new().hidden();
+    /// println!("{}", style.paint("ahoy"));
+    /// ```
     pub fn hidden(&self) -> Style {
         Style { is_hidden: true, .. *self }
     }
 
-    /// Returns a `Style` with the hidden property set.
+    /// Returns a `Style` with the strikethrough property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Style;
+    ///
+    /// let style = Style::new().strikethrough();
+    /// println!("{}", style.paint("yo"));
+    /// ```
     pub fn strikethrough(&self) -> Style {
         Style { is_strikethrough: true, .. *self }
     }
 
     /// Returns a `Style` with the foreground colour property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::{Style, Colour};
+    ///
+    /// let style = Style::new().fg(Colour::Yellow);
+    /// println!("{}", style.paint("hi"));
+    /// ```
     pub fn fg(&self, foreground: Colour) -> Style {
         Style { foreground: Some(foreground), .. *self }
     }
 
     /// Returns a `Style` with the background colour property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::{Style, Colour};
+    ///
+    /// let style = Style::new().on(Colour::Blue);
+    /// println!("{}", style.paint("eyyyy"));
+    /// ```
     pub fn on(&self, background: Colour) -> Style {
         Style { background: Some(background), .. *self }
     }
 
     /// Return true if this `Style` has no actual styles, and can be written
     /// without any control characters.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Style;
+    ///
+    /// assert_eq!(true,  Style::default().is_plain());
+    /// assert_eq!(false, Style::default().bold().is_plain());
+    /// ```
     pub fn is_plain(self) -> bool {
         self == Style::default()
     }
@@ -192,52 +300,152 @@ pub enum Colour {
 
 
 impl Colour {
-    /// Return a `Style` with the foreground colour set to this colour.
+
+    /// Returns a `Style` with the foreground colour set to this colour.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// let style = Colour::Red.normal();
+    /// println!("{}", style.paint("hi"));
+    /// ```
     pub fn normal(self) -> Style {
         Style { foreground: Some(self), .. Style::default() }
     }
 
-    /// Returns a `Style` with the bold property set.
+    /// Returns a `Style` with the foreground colour set to this colour and the
+    /// bold property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// let style = Colour::Green.bold();
+    /// println!("{}", style.paint("hey"));
+    /// ```
     pub fn bold(self) -> Style {
         Style { foreground: Some(self), is_bold: true, .. Style::default() }
     }
 
-    /// Returns a `Style` with the dimmed property set.
+    /// Returns a `Style` with the foreground colour set to this colour and the
+    /// dimmed property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// let style = Colour::Yellow.dimmed();
+    /// println!("{}", style.paint("sup"));
+    /// ```
     pub fn dimmed(self) -> Style {
         Style { foreground: Some(self), is_dimmed: true, .. Style::default() }
     }
 
-    /// Returns a `Style` with the italic property set.
+    /// Returns a `Style` with the foreground colour set to this colour and the
+    /// italic property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// let style = Colour::Blue.italic();
+    /// println!("{}", style.paint("greetings"));
+    /// ```
     pub fn italic(self) -> Style {
         Style { foreground: Some(self), is_italic: true, .. Style::default() }
     }
 
-    /// Returns a `Style` with the underline property set.
+    /// Returns a `Style` with the foreground colour set to this colour and the
+    /// underline property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// let style = Colour::Purple.underline();
+    /// println!("{}", style.paint("salutations"));
+    /// ```
     pub fn underline(self) -> Style {
         Style { foreground: Some(self), is_underline: true, .. Style::default() }
     }
 
-    /// Returns a `Style` with the blink property set.
+    /// Returns a `Style` with the foreground colour set to this colour and the
+    /// blink property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// let style = Colour::Cyan.blink();
+    /// println!("{}", style.paint("wazzup"));
+    /// ```
     pub fn blink(self) -> Style {
         Style { foreground: Some(self), is_blink: true, .. Style::default() }
     }
 
-    /// Returns a `Style` with the reverse property set.
+    /// Returns a `Style` with the foreground colour set to this colour and the
+    /// reverse property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// let style = Colour::Black.reverse();
+    /// println!("{}", style.paint("aloha"));
+    /// ```
     pub fn reverse(self) -> Style {
         Style { foreground: Some(self), is_reverse: true, .. Style::default() }
     }
 
-    /// Returns a `Style` with the hidden property set.
+    /// Returns a `Style` with the foreground colour set to this colour and the
+    /// hidden property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// let style = Colour::White.hidden();
+    /// println!("{}", style.paint("ahoy"));
+    /// ```
     pub fn hidden(self) -> Style {
         Style { foreground: Some(self), is_hidden: true, .. Style::default() }
     }
 
-    /// Returns a `Style` with the strikethrough property set.
+    /// Returns a `Style` with the foreground colour set to this colour and the
+    /// strikethrough property set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// let style = Colour::Fixed(244).strikethrough();
+    /// println!("{}", style.paint("yo"));
+    /// ```
     pub fn strikethrough(self) -> Style {
         Style { foreground: Some(self), is_strikethrough: true, .. Style::default() }
     }
 
-    /// Returns a `Style` with the background colour property set.
+    /// Returns a `Style` with the foreground colour set to this colour and the
+    /// background colour property set to the given colour.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// let style = Colour::RGB(31, 31, 31).on(Colour::White);
+    /// println!("{}", style.paint("eyyyy"));
+    /// ```
     pub fn on(self, background: Colour) -> Style {
         Style { foreground: Some(self), background: Some(background), .. Style::default() }
     }
