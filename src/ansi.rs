@@ -9,8 +9,7 @@ use write::AnyWrite;
 
 impl Style {
 
-    /// Write any ANSI codes that go *before* a piece of text. These should be
-    /// the codes to set the terminal to a different colour or font style.
+    /// Write any bytes that go *before* a piece of text to the given writer.
     fn write_prefix<W: AnyWrite + ?Sized>(&self, f: &mut W) -> Result<(), W::Error> {
 
         // If there are actually no styles here, then don’t write *any* codes
@@ -63,8 +62,7 @@ impl Style {
         Ok(())
     }
 
-    /// Write any ANSI codes that go *after* a piece of text. These should be
-    /// the codes to *reset* the terminal back to its normal colour and style.
+    /// Write any bytes that go *after* a piece of text to the given writer.
     fn write_suffix<W: AnyWrite + ?Sized>(&self, f: &mut W) -> Result<(), W::Error> {
         if self.is_plain() {
             Ok(())
@@ -115,32 +113,105 @@ impl Colour {
 
 
 /// Like `ANSIString`, but only displays the style prefix.
+///
+/// This type implements the `Display` trait, meaning it can be written to a
+/// `std::fmt` formatting without doing any extra allocation, and written to a
+/// string with the `.to_string()` method. For examples, see
+/// [`Style::prefix`](struct.Style.html#method.prefix).
 #[derive(Clone, Copy, Debug)]
 pub struct Prefix(Style);
 
 /// Like `ANSIString`, but only displays the difference between two
 /// styles.
+///
+/// This type implements the `Display` trait, meaning it can be written to a
+/// `std::fmt` formatting without doing any extra allocation, and written to a
+/// string with the `.to_string()` method. For examples, see
+/// [`Style::infix`](struct.Style.html#method.infix).
 #[derive(Clone, Copy, Debug)]
 pub struct Infix(Style, Style);
 
 /// Like `ANSIString`, but only displays the style suffix.
+///
+/// This type implements the `Display` trait, meaning it can be written to a
+/// `std::fmt` formatting without doing any extra allocation, and written to a
+/// string with the `.to_string()` method. For examples, see
+/// [`Style::suffix`](struct.Style.html#method.suffix).
 #[derive(Clone, Copy, Debug)]
 pub struct Suffix(Style);
 
 
 impl Style {
 
-    /// The prefix for this style.
+    /// The prefix bytes for this style. These are the bytes that tell the
+    /// terminal to use a different colour or font style.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::{Style, Colour::Blue};
+    ///
+    /// let style = Style::default().bold();
+    /// assert_eq!("\x1b[1m",
+    ///            style.prefix().to_string());
+    ///
+    /// let style = Blue.bold();
+    /// assert_eq!("\x1b[1;34m",
+    ///            style.prefix().to_string());
+    ///
+    /// let style = Style::default();
+    /// assert_eq!("",
+    ///            style.prefix().to_string());
+    /// ```
     pub fn prefix(self) -> Prefix {
         Prefix(self)
     }
 
-    /// The infix between this style and another.
+    /// The infix bytes between this style and another. These are the bytes
+    /// that tell the terminal to either use a different colour or font style
+    /// _or_ to reset entirely, depending on the two styles.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::{Style, Colour::Green};
+    ///
+    /// let style = Style::default().bold();
+    /// assert_eq!("\x1b[32m",
+    ///            style.infix(Green.bold()).to_string());
+    ///
+    /// let style = Green.normal();
+    /// assert_eq!("\x1b[1m",
+    ///            style.infix(Green.bold()).to_string());
+    ///
+    /// let style = Style::default();
+    /// assert_eq!("",
+    ///            style.infix(style).to_string());
+    /// ```
     pub fn infix(self, other: Style) -> Infix {
         Infix(self, other)
     }
 
-    /// The suffix for this style.
+    /// The suffix for this style. These are the bytes that tell the terminal
+    /// to reset back to its normal colour and font style.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::{Style, Colour::Green};
+    ///
+    /// let style = Style::default().bold();
+    /// assert_eq!("\x1b[0m",
+    ///            style.suffix().to_string());
+    ///
+    /// let style = Green.normal().bold();
+    /// assert_eq!("\x1b[0m",
+    ///            style.suffix().to_string());
+    ///
+    /// let style = Style::default();
+    /// assert_eq!("",
+    ///            style.suffix().to_string());
+    /// ```
     pub fn suffix(self) -> Suffix {
         Suffix(self)
     }
@@ -149,17 +220,54 @@ impl Style {
 
 impl Colour {
 
-    /// The prefix for this colour.
+    /// The prefix bytes for this colour as a `Style`. These are the bytes
+    /// that tell the terminal to use a different colour or font style.
+    ///
+    /// See also [`Style::prefix`](struct.Style.html#method.prefix).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour::Green;
+    ///
+    /// assert_eq!("\x1b[0m",
+    ///            Green.suffix().to_string());
+    /// ```
     pub fn prefix(self) -> Prefix {
         Prefix(self.normal())
     }
 
-    /// The infix between this colour and another.
+    /// The infix bytes between this style and another. These are the bytes
+    /// that tell the terminal to use the second colour, or to do nothing if
+    /// the two colours are equal.
+    ///
+    /// See also [`Style::infix`](struct.Style.html#method.infix).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour::{Red, Yellow};
+    ///
+    /// assert_eq!("\x1b[33m",
+    ///            Red.infix(Yellow).to_string());
+    /// ```
     pub fn infix(self, other: Colour) -> Infix {
         Infix(self.normal(), other.normal())
     }
 
-    /// The suffix for this colour.
+    /// The suffix for this colour as a `Style`. These are the bytes that
+    /// tell the terminal to reset back to its normal colour and font style.
+    ///
+    /// See also [`Style::suffix`](struct.Style.html#method.suffix).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour::Purple;
+    ///
+    /// assert_eq!("\x1b[0m",
+    ///            Purple.suffix().to_string());
+    /// ```
     pub fn suffix(self) -> Suffix {
         Suffix(self.normal())
     }
