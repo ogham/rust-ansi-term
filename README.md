@@ -29,6 +29,7 @@ For example, here’s how to get some red text:
 
 ```rust
 use ansi_term::Colour::Red;
+
 println!("This is in red: {}", Red.paint("a red string"));
 ```
 
@@ -41,6 +42,7 @@ If you *do* want to get at the escape codes, then you can convert the `ANSIStrin
 ```rust
 use ansi_term::Colour::Red;
 use std::string::ToString;
+
 let red_string = Red.paint("a red string").to_string();
 ```
 
@@ -59,6 +61,7 @@ For example:
 
 ```rust
 use ansi_term::Style;
+
 println!("How about some {} and {}?",
          Style::new().bold().paint("bold"),
          Style::new().underline().paint("underline"));
@@ -68,9 +71,11 @@ For brevity, these methods have also been implemented for `Colour` values, so yo
 
 ```rust
 use ansi_term::Colour::{Blue, Yellow};
+
 println!("Demonstrating {} and {}!",
          Blue.bold().paint("blue bold"),
          Yellow.underline().paint("yellow underline"));
+
 println!("Yellow on blue: {}", Yellow.on(Blue).paint("wow!"));
 ```
 
@@ -83,6 +88,7 @@ You can do this using the `fg` method:
 ```rust
 use ansi_term::Style;
 use ansi_term::Colour::{Blue, Cyan, Yellow};
+
 println!("Yellow on blue: {}", Style::new().on(Blue).fg(Yellow).paint("yow!"));
 println!("Also yellow on blue: {}", Cyan.on(Blue).fg(Yellow).paint("zow!"));
 ```
@@ -93,6 +99,7 @@ This will produce the exact same `ANSIString` as if you just used the `paint` me
 ```rust
 use ansi_term::Style;
 use ansi_term::Colour::Red;
+
 Red.normal().paint("yet another red string");
 Style::default().paint("a completely regular string");
 ```
@@ -105,6 +112,7 @@ This can be included wherever you would use a `Colour`:
 
 ```rust
 use ansi_term::Colour::Fixed;
+
 Fixed(134).paint("A sort of light purple");
 Fixed(221).on(Fixed(124)).paint("Mustard in the ketchup");
 ```
@@ -115,8 +123,9 @@ There’s nothing stopping you from using these as `Fixed` colours instead, but 
 You can also access full 24-bit color by using the `RGB` colour variant, which takes separate `u8` arguments for red, green, and blue:
 
 ```rust
-    use ansi_term::Colour::RGB;
-    RGB(70, 130, 180).paint("Steel blue");
+use ansi_term::Colour::RGB;
+
+RGB(70, 130, 180).paint("Steel blue");
 ```
 
 ## Combining successive coloured strings
@@ -132,12 +141,14 @@ The following code snippet uses this to enclose a binary number displayed in red
 ```rust
 use ansi_term::Colour::Red;
 use ansi_term::{ANSIString, ANSIStrings};
+
 let some_value = format!("{:b}", 42);
 let strings: &[ANSIString<'static>] = &[
     Red.paint("["),
     Red.bold().paint(some_value),
     Red.paint("]"),
 ];
+
 println!("Value: {}", ANSIStrings(strings));
 ```
 
@@ -158,6 +169,7 @@ it does provide a method `write_to` to write the result to any
 
 ```rust
 use ansi_term::Colour::Green;
+
 Green.paint("user data".as_bytes()).write_to(&mut std::io::stdout()).unwrap();
 ```
 
@@ -167,6 +179,7 @@ Similarly, the type `ANSIByteStrings` supports writing a list of
 ```rust
 use ansi_term::Colour::Green;
 use ansi_term::ANSIByteStrings;
+
 ANSIByteStrings(&[
     Green.paint("user data 1\n".as_bytes()),
     Green.bold().paint("user data 2\n".as_bytes()),

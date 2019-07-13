@@ -17,8 +17,11 @@
 //! passing in the string you want to format as the argument. For example,
 //! here’s how to get some red text:
 //!
-//!     use ansi_term::Colour::Red;
-//!     println!("This is in red: {}", Red.paint("a red string"));
+//! ```
+//! use ansi_term::Colour::Red;
+//!
+//! println!("This is in red: {}", Red.paint("a red string"));
+//! ```
 //!
 //! It’s important to note that the `paint` method does *not* actually return a
 //! string with the ANSI control characters surrounding it. Instead, it returns
@@ -29,9 +32,12 @@
 //! If you *do* want to get at the escape codes, then you can convert the
 //! `ANSIString` to a string as you would any other `Display` value:
 //!
-//!     use ansi_term::Colour::Red;
-//!     use std::string::ToString;
-//!     let red_string = Red.paint("a red string").to_string();
+//! ```
+//! use ansi_term::Colour::Red;
+//! use std::string::ToString;
+//!
+//! let red_string = Red.paint("a red string").to_string();
+//! ```
 //!
 //!
 //! ## Bold, underline, background, and other styles
@@ -42,20 +48,27 @@
 //! `Style::new()`. Each method creates a new style that has that specific
 //! property set. For example:
 //!
-//!     use ansi_term::Style;
-//!     println!("How about some {} and {}?",
-//!              Style::new().bold().paint("bold"),
-//!              Style::new().underline().paint("underline"));
+//! ```
+//! use ansi_term::Style;
+//!
+//! println!("How about some {} and {}?",
+//!          Style::new().bold().paint("bold"),
+//!          Style::new().underline().paint("underline"));
+//! ```
 //!
 //! For brevity, these methods have also been implemented for `Colour` values,
 //! so you can give your styles a foreground colour without having to begin with
 //! an empty `Style` value:
 //!
-//!     use ansi_term::Colour::{Blue, Yellow};
-//!     println!("Demonstrating {} and {}!",
-//!              Blue.bold().paint("blue bold"),
-//!              Yellow.underline().paint("yellow underline"));
-//!     println!("Yellow on blue: {}", Yellow.on(Blue).paint("wow!"));
+//! ```
+//! use ansi_term::Colour::{Blue, Yellow};
+//!
+//! println!("Demonstrating {} and {}!",
+//!          Blue.bold().paint("blue bold"),
+//!          Yellow.underline().paint("yellow underline"));
+//!
+//! println!("Yellow on blue: {}", Yellow.on(Blue).paint("wow!"));
+//! ```
 //!
 //! The complete list of styles you can use are: `bold`, `dimmed`, `italic`,
 //! `underline`, `blink`, `reverse`, `hidden`, `strikethrough`, and `on` for
@@ -65,10 +78,13 @@
 //! existing `Style` rather than starting from the appropriate `Colour`.
 //! You can do this using the `fg` method:
 //!
-//!     use ansi_term::Style;
-//!     use ansi_term::Colour::{Blue, Cyan, Yellow};
-//!     println!("Yellow on blue: {}", Style::new().on(Blue).fg(Yellow).paint("yow!"));
-//!     println!("Also yellow on blue: {}", Cyan.on(Blue).fg(Yellow).paint("zow!"));
+//! ```
+//! use ansi_term::Style;
+//! use ansi_term::Colour::{Blue, Cyan, Yellow};
+//!
+//! println!("Yellow on blue: {}", Style::new().on(Blue).fg(Yellow).paint("yow!"));
+//! println!("Also yellow on blue: {}", Cyan.on(Blue).fg(Yellow).paint("zow!"));
+//! ```
 //!
 //! Finally, you can turn a `Colour` into a `Style` with the `normal` method.
 //! This will produce the exact same `ANSIString` as if you just used the
@@ -78,10 +94,13 @@
 //! the same type. The `Style` struct also has a `Default` implementation if you
 //! want to have a style with *nothing* set.
 //!
-//!     use ansi_term::Style;
-//!     use ansi_term::Colour::Red;
-//!     Red.normal().paint("yet another red string");
-//!     Style::default().paint("a completely regular string");
+//! ```
+//! use ansi_term::Style;
+//! use ansi_term::Colour::Red;
+//!
+//! Red.normal().paint("yet another red string");
+//! Style::default().paint("a completely regular string");
+//! ```
 //!
 //!
 //! ## Extended colours
@@ -90,9 +109,12 @@
 //! variant, which takes an argument of the colour number to use. This can be
 //! included wherever you would use a `Colour`:
 //!
-//!     use ansi_term::Colour::Fixed;
-//!     Fixed(134).paint("A sort of light purple");
-//!     Fixed(221).on(Fixed(124)).paint("Mustard in the ketchup");
+//! ```
+//! use ansi_term::Colour::Fixed;
+//!
+//! Fixed(134).paint("A sort of light purple");
+//! Fixed(221).on(Fixed(124)).paint("Mustard in the ketchup");
+//! ```
 //!
 //! The first sixteen of these values are the same as the normal and bold
 //! standard colour variants. There’s nothing stopping you from using these as
@@ -102,8 +124,11 @@
 //! You can also access full 24-bit color by using the `RGB` colour variant,
 //! which takes separate `u8` arguments for red, green, and blue:
 //!
-//!     use ansi_term::Colour::RGB;
-//!     RGB(70, 130, 180).paint("Steel blue");
+//! ```
+//! use ansi_term::Colour::RGB;
+//!
+//! RGB(70, 130, 180).paint("Steel blue");
+//! ```
 //!
 //! ## Combining successive coloured strings
 //!
@@ -124,15 +149,19 @@
 //! The following code snippet uses this to enclose a binary number displayed in
 //! red bold text inside some red, but not bold, brackets:
 //!
-//!     use ansi_term::Colour::Red;
-//!     use ansi_term::{ANSIString, ANSIStrings};
-//!     let some_value = format!("{:b}", 42);
-//!     let strings: &[ANSIString<'static>] = &[
-//!         Red.paint("["),
-//!         Red.bold().paint(some_value),
-//!         Red.paint("]"),
-//!     ];
-//!     println!("Value: {}", ANSIStrings(strings));
+//! ```
+//! use ansi_term::Colour::Red;
+//! use ansi_term::{ANSIString, ANSIStrings};
+//!
+//! let some_value = format!("{:b}", 42);
+//! let strings: &[ANSIString<'static>] = &[
+//!     Red.paint("["),
+//!     Red.bold().paint(some_value),
+//!     Red.paint("]"),
+//! ];
+//!
+//! println!("Value: {}", ANSIStrings(strings));
+//! ```
 //!
 //! There are several things to note here. Firstly, the `paint` method can take
 //! *either* an owned `String` or a borrowed `&str`. Internally, an `ANSIString`
@@ -152,18 +181,24 @@
 //! it does provide a method `write_to` to write the result to any
 //! `io::Write`:
 //!
-//!     use ansi_term::Colour::Green;
-//!     Green.paint("user data".as_bytes()).write_to(&mut std::io::stdout()).unwrap();
+//! ```
+//! use ansi_term::Colour::Green;
+//!
+//! Green.paint("user data".as_bytes()).write_to(&mut std::io::stdout()).unwrap();
+//! ```
 //!
 //! Similarly, the type `ANSIByteStrings` supports writing a list of
 //! `ANSIByteString` values with minimal escape sequences:
 //!
-//!     use ansi_term::Colour::Green;
-//!     use ansi_term::ANSIByteStrings;
-//!     ANSIByteStrings(&[
-//!         Green.paint("user data 1\n".as_bytes()),
-//!         Green.bold().paint("user data 2\n".as_bytes()),
-//!     ]).write_to(&mut std::io::stdout()).unwrap();
+//! ```
+//! use ansi_term::Colour::Green;
+//! use ansi_term::ANSIByteStrings;
+//!
+//! ANSIByteStrings(&[
+//!     Green.paint("user data 1\n".as_bytes()),
+//!     Green.bold().paint("user data 2\n".as_bytes()),
+//! ]).write_to(&mut std::io::stdout()).unwrap();
+//! ```
 
 
 #![crate_name = "ansi_term"]
