@@ -17,12 +17,13 @@ ansi_term = "0.11"
 
 ## Basic usage
 
-There are two main data structures in this crate that you need to be concerned with: `ANSIString` and `Style`.
-A `Style` holds stylistic information: colours, whether the text should be bold, or blinking, or whatever.
-There are also `Colour` variants that represent simple foreground colour styles.
-An `ANSIString` is a string paired with a `Style`.
+There are three main types in this crate that you need to be concerned with: `ANSIString`, `Style`, and `Colour`.
 
-(Yes, it’s British English, but you won’t have to write “colour” very often. `Style` is used the majority of the time.)
+A `Style` holds stylistic information: foreground and background colours, whether the text should be bold, or blinking, or other properties.
+The `Colour` enum represents the available colours.
+And an `ANSIString` is a string paired with a `Style`.
+
+`Color` is also available as an alias to `Colour`.
 
 To format a string, call the `paint` method on a `Style` or a `Colour`, passing in the string you want to format as the argument.
 For example, here’s how to get some red text:
@@ -53,7 +54,7 @@ let enabled = ansi_term::enable_ansi_support();
 
 ## Bold, underline, background, and other styles
 
-For anything more complex than plain foreground colour changes, you need to construct `Style` objects themselves, rather than beginning with a `Colour`.
+For anything more complex than plain foreground colour changes, you need to construct `Style` values themselves, rather than beginning with a `Colour`.
 You can do this by chaining methods based on a new `Style`, created with `Style::new()`.
 Each method creates a new style that has that specific property set.
 For example:
@@ -92,7 +93,7 @@ println!("Yellow on blue: {}", Style::new().on(Blue).fg(Yellow).paint("yow!"));
 println!("Also yellow on blue: {}", Cyan.on(Blue).fg(Yellow).paint("zow!"));
 ```
 
-Finally, you can turn a `Colour` into a `Style` with the `normal` method.
+You can turn a `Colour` into a `Style` with the `normal` method.
 This will produce the exact same `ANSIString` as if you just used the `paint` method on the `Colour` directly, but it’s useful in certain cases: for example, you may have a method that returns `Styles`, and need to represent both the “red bold” and “red, but not bold” styles with values of the same type. The `Style` struct also has a `Default` implementation if you want to have a style with *nothing* set.
 
 ```rust
@@ -106,7 +107,7 @@ Style::default().paint("a completely regular string");
 
 ## Extended colours
 
-You can access the extended range of 256 colours by using the `Fixed` colour variant, which takes an argument of the colour number to use.
+You can access the extended range of 256 colours by using the `Colour::Fixed` variant, which takes an argument of the colour number to use.
 This can be included wherever you would use a `Colour`:
 
 ```rust
@@ -119,7 +120,7 @@ Fixed(221).on(Fixed(124)).paint("Mustard in the ketchup");
 The first sixteen of these values are the same as the normal and bold standard colour variants.
 There’s nothing stopping you from using these as `Fixed` colours instead, but there’s nothing to be gained by doing so either.
 
-You can also access full 24-bit color by using the `RGB` colour variant, which takes separate `u8` arguments for red, green, and blue:
+You can also access full 24-bit colour by using the `Colour::RGB` variant, which takes separate `u8` arguments for red, green, and blue:
 
 ```rust
 use ansi_term::Colour::RGB;
@@ -159,12 +160,9 @@ Secondly, that the `ANSIStrings` value works in the same way as its singular cou
 
 ## Byte strings
 
-This library also supports formatting `[u8]` byte strings; this supports
-applications working with text in an unknown encoding.  `Style` and
-`Color` support painting `[u8]` values, resulting in an `ANSIByteString`.
-This type does not implement `Display`, as it may not contain UTF-8, but
-it does provide a method `write_to` to write the result to any
-`io::Write`:
+This library also supports formatting `[u8]` byte strings; this supports applications working with text in an unknown encoding.
+`Style` and `Colour` support painting `[u8]` values, resulting in an `ANSIByteString`.
+This type does not implement `Display`, as it may not contain UTF-8, but it does provide a method `write_to` to write the result to any value that implements `Write`:
 
 ```rust
 use ansi_term::Colour::Green;
@@ -172,8 +170,7 @@ use ansi_term::Colour::Green;
 Green.paint("user data".as_bytes()).write_to(&mut std::io::stdout()).unwrap();
 ```
 
-Similarly, the type `ANSIByteStrings` supports writing a list of
-`ANSIByteString` values with minimal escape sequences:
+Similarly, the type `ANSIByteStrings` supports writing a list of `ANSIByteString` values with minimal escape sequences:
 
 ```rust
 use ansi_term::Colour::Green;

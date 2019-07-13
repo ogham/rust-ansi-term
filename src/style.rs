@@ -1,5 +1,14 @@
 /// A style is a collection of properties that can format a string
 /// using ANSI escape codes.
+///
+/// # Examples
+///
+/// ```
+/// use ansi_term::{Style, Colour};
+///
+/// let style = Style::new().bold().on(Colour::Black);
+/// println!("{}", style.paint("Bold on black"));
+/// ```
 #[derive(PartialEq, Clone, Copy)]
 #[cfg_attr(feature = "derive_serde_style", derive(serde::Deserialize, serde::Serialize))]
 pub struct Style {

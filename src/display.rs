@@ -11,7 +11,7 @@ use write::AnyWrite;
 
 /// An `ANSIGenericString` includes a generic string type and a `Style` to
 /// display that string.  `ANSIString` and `ANSIByteString` are aliases for
-/// this type on `str` and `[u8]`, respectively.
+/// this type on `str` and `\[u8]`, respectively.
 #[derive(PartialEq, Debug)]
 pub struct ANSIGenericString<'a, S: 'a + ToOwned + ?Sized>
 where <S as ToOwned>::Owned: fmt::Debug {
@@ -22,7 +22,7 @@ where <S as ToOwned>::Owned: fmt::Debug {
 
 /// Cloning an `ANSIGenericString` will clone its underlying string.
 ///
-/// ### Examples
+/// # Examples
 ///
 /// ```
 /// use ansi_term::ANSIString;
@@ -70,9 +70,9 @@ where <S as ToOwned>::Owned: fmt::Debug {
 /// Although not technically a string itself, it can be turned into
 /// one with the `to_string` method.
 ///
-/// ### Examples
+/// # Examples
 ///
-/// ```no_run
+/// ```
 /// use ansi_term::ANSIString;
 /// use ansi_term::Colour::Red;
 ///
