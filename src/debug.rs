@@ -105,7 +105,7 @@ mod test {
     fn long_and_detailed() {
         let debug = r##"Style {
     foreground: Some(
-        Blue
+        Blue,
     ),
     background: None,
     blink: false,
@@ -115,7 +115,7 @@ mod test {
     italic: false,
     reverse: false,
     strikethrough: false,
-    underline: false
+    underline: false,
 }"##;
         assert_eq!(debug, format!("{:#?}", Blue.bold()));
     }
