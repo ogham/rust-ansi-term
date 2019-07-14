@@ -11,7 +11,7 @@ This crate works with [Cargo](http://crates.io). Add the following to your `Carg
 
 ```toml
 [dependencies]
-ansi_term = "0.11"
+ansi_term = "0.12"
 ```
 
 
