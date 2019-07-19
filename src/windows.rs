@@ -16,8 +16,9 @@ pub fn enable_ansi_support() -> Result<(), u32> {
     use std::ptr::null_mut;
     use winapi::um::consoleapi::{GetConsoleMode, SetConsoleMode};
     use winapi::um::errhandlingapi::GetLastError;
-    use winapi::um::fileapi::CreateFile2;
+    use winapi::um::fileapi::{CreateFile2, OPEN_EXISTING};
     use winapi::um::handleapi::INVALID_HANDLE_VALUE;
+    use winapi::um::winnt::{FILE_SHARE_WRITE, GENERIC_READ, GENERIC_WRITE};
 
     const ENABLE_VIRTUAL_TERMINAL_PROCESSING: u32 = 0x0004;
 
@@ -27,9 +28,9 @@ pub fn enable_ansi_support() -> Result<(), u32> {
         let console_out_name: Vec<u16> = OsStr::new("CONOUT$").encode_wide().chain(once(0)).collect();
         let console_handle = CreateFile2(
             console_out_name.as_ptr(),
-            winapi::um::winnt::GENERIC_READ | winapi::um::winnt::GENERIC_WRITE,
-            winapi::um::winnt::FILE_SHARE_WRITE,
-            winapi::um::fileapi::OPEN_EXISTING,
+            GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_WRITE,
+            OPEN_EXISTING,
             null_mut(),
         );
         if console_handle == INVALID_HANDLE_VALUE
