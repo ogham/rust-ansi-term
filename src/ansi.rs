@@ -293,7 +293,7 @@ impl fmt::Display for Infix {
             },
             Difference::Reset => {
                 let f: &mut fmt::Write = f;
-                write!(f, "{}{}", RESET, self.0.prefix())
+                write!(f, "{}{}", RESET, self.1.prefix())
             },
             Difference::NoDifference => {
                 Ok(())   // nothing to write
@@ -363,4 +363,12 @@ mod test {
     test!(hidden:                Style::new().hidden();             "hi" => "\x1B[8mhi\x1B[0m");
     test!(stricken:              Style::new().strikethrough();      "hi" => "\x1B[9mhi\x1B[0m");
 
+    #[test]
+    fn test_infix() {
+        assert_eq!(Style::new().dimmed().infix(Style::new()).to_string(), "\x1B[0m");
+        assert_eq!(White.dimmed().infix(White.normal()).to_string(), "\x1B[0m\x1B[37m");
+        assert_eq!(White.normal().infix(White.bold()).to_string(), "\x1B[1m");
+        assert_eq!(White.normal().infix(Blue.normal()).to_string(), "\x1B[34m");
+        assert_eq!(Blue.bold().infix(Blue.bold()).to_string(), "");
+    }
 }
