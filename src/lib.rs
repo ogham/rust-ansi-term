@@ -229,17 +229,11 @@
 //! [`fg`]: struct.Style.html#method.fg
 //! [`on`]: struct.Style.html#method.on
 
-#![crate_name = "ansi_term"]
-#![crate_type = "rlib"]
-#![crate_type = "dylib"]
-
 #![warn(missing_copy_implementations)]
 #![warn(missing_docs)]
 #![warn(trivial_casts, trivial_numeric_casts)]
 #![warn(unused_extern_crates, unused_qualifications)]
 
-#[cfg(target_os="windows")]
-extern crate winapi;
 #[cfg(test)]
 #[macro_use]
 extern crate doc_comment;
@@ -262,8 +256,8 @@ pub use display::*;
 
 mod write;
 
-mod windows;
-pub use windows::*;
+mod support;
+pub use support::*;
 
 mod util;
 pub use util::*;

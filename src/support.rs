@@ -1,4 +1,4 @@
-/// Enables ANSI code support on Windows 10.
+/// Enables ANSI code support on Windows 10. This method is a no-op other platforms.
 ///
 /// This uses Windows API calls to alter the properties of the console that
 /// the program is running in.
@@ -55,4 +55,29 @@ pub fn enable_ansi_support() -> Result<(), u32> {
     }
 
     return Ok(());
+}
+
+/// Enables ANSI code support on Windows 10. This method is a no-op other platforms.
+///
+/// This uses Windows API calls to alter the properties of the console that
+/// the program is running in.
+///
+/// https://msdn.microsoft.com/en-us/library/windows/desktop/mt638032(v=vs.85).aspx
+///
+/// Returns a `Result` with the Windows error code if unsuccessful.
+#[cfg(not(target_os = "windows"))]
+pub fn enable_ansi_support() -> Result<(), u32> {
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::enable_ansi_support;
+
+    #[cfg(not(target_os = "windows"))]
+    #[test]
+    fn test_enable_ansi_support() {
+        let result = enable_ansi_support();
+        assert_eq!(result.is_ok(), true);
+    }
 }

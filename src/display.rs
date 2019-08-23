@@ -3,10 +3,10 @@ use std::fmt;
 use std::io;
 use std::ops::Deref;
 
-use ansi::RESET;
-use difference::Difference;
-use style::{Style, Colour};
-use write::AnyWrite;
+use crate::ansi::RESET;
+use crate::difference::Difference;
+use crate::style::{Style, Colour};
+use crate::write::AnyWrite;
 
 
 /// An `ANSIGenericString` includes a generic string type and a `Style` to
@@ -283,8 +283,8 @@ where <S as ToOwned>::Owned: fmt::Debug, &'a S: AsRef<[u8]> {
 #[cfg(test)]
 mod tests {
     pub use super::super::ANSIStrings;
-    pub use style::Style;
-    pub use style::Colour::*;
+    pub use crate::style::Colour::*;
+    pub use crate::style::Style;
 
     #[test]
     fn no_control_codes_for_plain() {

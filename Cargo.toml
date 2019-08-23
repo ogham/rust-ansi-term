@@ -1,6 +1,7 @@
 [package]
 name = "ansi_term"
 description = "Library for ANSI terminal colours and styles (bold, underline)"
+edition = "2018"
 
 authors = [ "ogham@bsago.me", "Ryan Scheel (Havvy) <ryan.havvy@gmail.com>", "Josh Triplett <josh@joshtriplett.org>" ]
 documentation = "https://docs.rs/ansi_term"
@@ -12,6 +13,7 @@ repository = "https://github.com/ogham/rust-ansi-term"
 
 [lib]
 name = "ansi_term"
+crate-type = ["rlib", "dylib"]
 
 [features]
 derive_serde_style = ["serde"]
@@ -21,9 +23,9 @@ version = "1.0.90"
 features = ["derive"]
 optional = true
 
-[target.'cfg(target_os="windows")'.dependencies.winapi]
+[target.'cfg(target_os = "windows")'.dependencies.winapi]
 version = "0.3.4"
-features = ["errhandlingapi", "consoleapi", "processenv", "handleapi"]
+features = ["errhandlingapi", "consoleapi", "processenv", "handleapi", "fileapi"]
 
 [dev-dependencies]
 doc-comment = "0.3"

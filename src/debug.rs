@@ -1,6 +1,6 @@
 use std::fmt;
 
-use style::Style;
+use crate::style::Style;
 
 
 /// Styles have a special `Debug` implementation that only shows the fields that
@@ -73,8 +73,8 @@ impl fmt::Debug for Style {
 
 #[cfg(test)]
 mod test {
-    use style::Colour::*;
-    use style::Style;
+    use crate::style::Colour::*;
+    use crate::style::Style;
 
     fn style() -> Style {
         Style::new()
