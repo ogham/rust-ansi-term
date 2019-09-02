@@ -166,9 +166,9 @@ impl Style {
         Prefix(self)
     }
 
-    /// The infix bytes between this style and another. These are the bytes
-    /// that tell the terminal to either use a different colour or font style
-    /// _or_ to reset entirely, depending on the two styles.
+    /// The infix bytes between this style and `next` style. These are the bytes
+    /// that tell the terminal to change the style to `next`. These may include
+    /// a reset followed by the next colour and style, depending on the two styles.
     ///
     /// # Examples
     ///
@@ -187,8 +187,8 @@ impl Style {
     /// assert_eq!("",
     ///            style.infix(style).to_string());
     /// ```
-    pub fn infix(self, other: Style) -> Infix {
-        Infix(self, other)
+    pub fn infix(self, next: Style) -> Infix {
+        Infix(self, next)
     }
 
     /// The suffix for this style. These are the bytes that tell the terminal
@@ -236,8 +236,8 @@ impl Colour {
         Prefix(self.normal())
     }
 
-    /// The infix bytes between this style and another. These are the bytes
-    /// that tell the terminal to use the second colour, or to do nothing if
+    /// The infix bytes between this colour and `next` colour. These are the bytes
+    /// that tell the terminal to use the `next` colour, or to do nothing if
     /// the two colours are equal.
     ///
     /// See also [`Style::infix`](struct.Style.html#method.infix).
@@ -250,8 +250,8 @@ impl Colour {
     /// assert_eq!("\x1b[33m",
     ///            Red.infix(Yellow).to_string());
     /// ```
-    pub fn infix(self, other: Colour) -> Infix {
-        Infix(self.normal(), other.normal())
+    pub fn infix(self, next: Colour) -> Infix {
+        Infix(self.normal(), next.normal())
     }
 
     /// The suffix for this colour as a `Style`. These are the bytes that
@@ -292,7 +292,7 @@ impl fmt::Display for Infix {
             },
             Difference::Reset => {
                 let f: &mut fmt::Write = f;
-                write!(f, "{}{}", RESET, self.0.prefix())
+                write!(f, "{}{}", RESET, self.1.prefix())
             },
             Difference::NoDifference => {
                 Ok(())   // nothing to write
@@ -362,4 +362,12 @@ mod test {
     test!(hidden:                Style::new().hidden();             "hi" => "\x1B[8mhi\x1B[0m");
     test!(stricken:              Style::new().strikethrough();      "hi" => "\x1B[9mhi\x1B[0m");
 
+    #[test]
+    fn test_infix() {
+        assert_eq!(Style::new().dimmed().infix(Style::new()).to_string(), "\x1B[0m");
+        assert_eq!(White.dimmed().infix(White.normal()).to_string(), "\x1B[0m\x1B[37m");
+        assert_eq!(White.normal().infix(White.bold()).to_string(), "\x1B[1m");
+        assert_eq!(White.normal().infix(Blue.normal()).to_string(), "\x1B[34m");
+        assert_eq!(Blue.bold().infix(Blue.bold()).to_string(), "");
+    }
 }

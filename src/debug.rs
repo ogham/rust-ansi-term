@@ -2,7 +2,6 @@ use std::fmt;
 
 use crate::style::Style;
 
-
 /// Styles have a special `Debug` implementation that only shows the fields that
 /// are set. Fields that haven’t been touched aren’t included in the output.
 ///
@@ -103,20 +102,33 @@ mod test {
 
     #[test]
     fn long_and_detailed() {
-        let debug = r##"Style {
-    foreground: Some(
-        Blue,
-    ),
-    background: None,
-    blink: false,
-    bold: true,
-    dimmed: false,
-    hidden: false,
-    italic: false,
-    reverse: false,
-    strikethrough: false,
-    underline: false,
-}"##;
-        assert_eq!(debug, format!("{:#?}", Blue.bold()));
+        extern crate regex;
+        let expected_debug = "Style { fg(Blue), bold }";
+        let expected_pretty_repat = r##"(?x)
+        Style\s+\{\s+
+            foreground:\s+Some\(\s+
+                Blue,?\s+
+            \),\s+
+            background:\s+None,\s+
+            blink:\s+false,\s+
+            bold:\s+true,\s+
+            dimmed:\s+false,\s+
+            hidden:\s+false,\s+
+            italic:\s+false,\s+
+            reverse:\s+false,\s+
+            strikethrough:\s+
+            false,\s+
+            underline:\s+false,?\s+
+            \}"##;
+        let re = regex::Regex::new(expected_pretty_repat).unwrap();
+
+        let style = Blue.bold();
+        let style_fmt_debug = format!("{:?}", style);
+        let style_fmt_pretty = format!("{:#?}", style);
+        println!("style_fmt_debug:\n{}", style_fmt_debug);
+        println!("style_fmt_pretty:\n{}", style_fmt_pretty);
+
+        assert_eq!(expected_debug, style_fmt_debug);
+        assert!(re.is_match(&style_fmt_pretty));
     }
 }

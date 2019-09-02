@@ -16,20 +16,23 @@ pub fn enable_ansi_support() -> Result<(), u32> {
     use std::ptr::null_mut;
     use winapi::um::consoleapi::{GetConsoleMode, SetConsoleMode};
     use winapi::um::errhandlingapi::GetLastError;
-    use winapi::um::fileapi::CreateFile2;
+    use winapi::um::fileapi::{CreateFileW, OPEN_EXISTING};
     use winapi::um::handleapi::INVALID_HANDLE_VALUE;
+    use winapi::um::winnt::{FILE_SHARE_WRITE, GENERIC_READ, GENERIC_WRITE};
 
     const ENABLE_VIRTUAL_TERMINAL_PROCESSING: u32 = 0x0004;
 
     unsafe {
-        // ref: https://docs.microsoft.com/en-us/windows/desktop/api/fileapi/nf-fileapi-createfile2
-        // Using `CreateFile2("CONOUT$", ...)` to retrieve the console handle works correctly even if STDOUT and/or STDERR are redirected
+        // ref: https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
+        // Using `CreateFileW("CONOUT$", ...)` to retrieve the console handle works correctly even if STDOUT and/or STDERR are redirected
         let console_out_name: Vec<u16> = OsStr::new("CONOUT$").encode_wide().chain(once(0)).collect();
-        let console_handle = CreateFile2(
+        let console_handle = CreateFileW(
             console_out_name.as_ptr(),
-            winapi::um::winnt::GENERIC_READ | winapi::um::winnt::GENERIC_WRITE,
-            winapi::um::winnt::FILE_SHARE_WRITE,
-            winapi::um::fileapi::OPEN_EXISTING,
+            GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_WRITE,
+            null_mut(),
+            OPEN_EXISTING,
+            0,
             null_mut(),
         );
         if console_handle == INVALID_HANDLE_VALUE
