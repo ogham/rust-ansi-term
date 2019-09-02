@@ -23,10 +23,11 @@ optional = true
 
 [target.'cfg(target_os="windows")'.dependencies.winapi]
 version = "0.3.4"
-features = ["errhandlingapi", "consoleapi", "processenv", "handleapi"]
+features = ["consoleapi", "errhandlingapi", "fileapi", "handleapi", "processenv"]
 
 [dev-dependencies]
 doc-comment = "0.3"
+regex = "1.1.9"
 
 [dev-dependencies.serde_json]
 version = "1.0.39"

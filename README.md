@@ -1,4 +1,4 @@
-# rust-ansi-term [![ansi-term on crates.io](http://meritbadge.herokuapp.com/ansi-term)](https://crates.io/crates/ansi_term) [![Build status](https://travis-ci.org/ogham/rust-ansi-term.svg?branch=master)](https://travis-ci.org/ogham/rust-ansi-term) [![Coverage status](https://coveralls.io/repos/ogham/rust-ansi-term/badge.svg?branch=master&service=github)](https://coveralls.io/github/ogham/rust-ansi-term?branch=master)
+# rust-ansi-term [![ansi-term on crates.io](http://meritbadge.herokuapp.com/ansi-term)](https://crates.io/crates/ansi_term) [![Build status](https://img.shields.io/travis/ogham/rust-ansi-term/master.svg?style=flat)](https://travis-ci.org/ogham/rust-ansi-term) [![Build status](https://img.shields.io/appveyor/ci/ogham/rust-ansi-term/master.svg?style=flat&logo=AppVeyor&logoColor=silver)](https://ci.appveyor.com/project/ogham/rust-ansi-term) [![Coverage status](https://coveralls.io/repos/ogham/rust-ansi-term/badge.svg?branch=master&service=github)](https://coveralls.io/github/ogham/rust-ansi-term?branch=master)
 
 This is a library for controlling colours and formatting, such as red bold text or blue underlined text, on ANSI terminals.
 
