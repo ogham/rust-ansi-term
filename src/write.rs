@@ -12,7 +12,7 @@ pub trait AnyWrite {
 }
 
 
-impl<'a> AnyWrite for fmt::Write + 'a {
+impl<'a> AnyWrite for dyn fmt::Write + 'a {
     type wstr = str;
     type Error = fmt::Error;
 
@@ -26,7 +26,7 @@ impl<'a> AnyWrite for fmt::Write + 'a {
 }
 
 
-impl<'a> AnyWrite for io::Write + 'a {
+impl<'a> AnyWrite for dyn io::Write + 'a {
     type wstr = [u8];
     type Error = io::Error;
 
