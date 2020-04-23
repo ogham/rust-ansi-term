@@ -3,7 +3,7 @@ use super::Style;
 
 /// When printing out one coloured string followed by another, use one of
 /// these rules to figure out which *extra* control codes need to be sent.
-#[derive(PartialEq, Clone, Copy, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Difference {
 
     /// Print out the control codes specified by this style to end up looking
@@ -13,6 +13,11 @@ pub enum Difference {
     /// Converting between these two is impossible, so just send a reset
     /// command and then the second string's styles.
     Reset,
+
+    /// Converting between these two is impossible, and the first includes a
+    /// hyperlink, so send a reset and a hyperlink reset, then the second
+    /// string's styles.
+    ResetHyperlink,
 
     /// The before style is exactly the same as the after style, so no further
     /// control codes need to be printed.
@@ -45,6 +50,10 @@ impl Difference {
 
         if first == next {
             return NoDifference;
+        }
+
+        if first.hyperlink_url.is_some() && next.hyperlink_url.is_none() {
+            return ResetHyperlink;
         }
 
         // Cannot un-bold, so must Reset.
@@ -133,6 +142,10 @@ impl Difference {
             extra_styles.background = next.background;
         }
 
+        if first.hyperlink_url != next.hyperlink_url {
+            extra_styles.hyperlink_url = next.hyperlink_url.clone();
+        }
+
         ExtraStyles(extra_styles)
     }
 }
@@ -170,10 +183,14 @@ mod test {
     test!(addition_of_hidden:         style(); style().hidden()         => ExtraStyles(style().hidden()));
     test!(addition_of_reverse:        style(); style().reverse()        => ExtraStyles(style().reverse()));
     test!(addition_of_strikethrough:  style(); style().strikethrough()  => ExtraStyles(style().strikethrough()));
+    test!(addition_of_hyperlink:      style(); style().hyperlink("x")   => ExtraStyles(style().hyperlink("x")));
 
     test!(removal_of_strikethrough:   style().strikethrough(); style()  => Reset);
     test!(removal_of_reverse:         style().reverse();       style()  => Reset);
     test!(removal_of_hidden:          style().hidden();        style()  => Reset);
     test!(removal_of_dimmed:          style().dimmed();        style()  => Reset);
     test!(removal_of_blink:           style().blink();         style()  => Reset);
+    test!(removal_of_hyperlink:       style().hyperlink("x");  style()  => ResetHyperlink);
+
+    test!(change_of_hyperlink: style().hyperlink("url1"); style().hyperlink("url2") => ExtraStyles(style().hyperlink("url2")));
 }

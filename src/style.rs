@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 /// A style is a collection of properties that can format a string
 /// using ANSI escape codes.
 ///
@@ -9,7 +11,7 @@
 /// let style = Style::new().bold().on(Colour::Black);
 /// println!("{}", style.paint("Bold on black"));
 /// ```
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Clone)]
 #[cfg_attr(feature = "derive_serde_style", derive(serde::Deserialize, serde::Serialize))]
 pub struct Style {
 
@@ -41,7 +43,10 @@ pub struct Style {
     pub is_hidden: bool,
 
     /// Whether this style is struckthrough.
-    pub is_strikethrough: bool
+    pub is_strikethrough: bool,
+
+    /// Hyperlink target for this style
+    pub hyperlink_url: Option<Rc<str>>,
 }
 
 impl Style {
@@ -71,7 +76,7 @@ impl Style {
     /// println!("{}", style.paint("hey"));
     /// ```
     pub fn bold(&self) -> Style {
-        Style { is_bold: true, .. *self }
+        Style { is_bold: true, ..self.clone() }
     }
 
     /// Returns a `Style` with the dimmed property set.
@@ -85,7 +90,7 @@ impl Style {
     /// println!("{}", style.paint("sup"));
     /// ```
     pub fn dimmed(&self) -> Style {
-        Style { is_dimmed: true, .. *self }
+        Style { is_dimmed: true, ..self.clone() }
     }
 
     /// Returns a `Style` with the italic property set.
@@ -99,7 +104,7 @@ impl Style {
     /// println!("{}", style.paint("greetings"));
     /// ```
     pub fn italic(&self) -> Style {
-        Style { is_italic: true, .. *self }
+        Style { is_italic: true, ..self.clone() }
     }
 
     /// Returns a `Style` with the underline property set.
@@ -113,7 +118,7 @@ impl Style {
     /// println!("{}", style.paint("salutations"));
     /// ```
     pub fn underline(&self) -> Style {
-        Style { is_underline: true, .. *self }
+        Style { is_underline: true, ..self.clone() }
     }
 
     /// Returns a `Style` with the blink property set.
@@ -126,7 +131,7 @@ impl Style {
     /// println!("{}", style.paint("wazzup"));
     /// ```
     pub fn blink(&self) -> Style {
-        Style { is_blink: true, .. *self }
+        Style { is_blink: true, ..self.clone() }
     }
 
     /// Returns a `Style` with the reverse property set.
@@ -140,7 +145,7 @@ impl Style {
     /// println!("{}", style.paint("aloha"));
     /// ```
     pub fn reverse(&self) -> Style {
-        Style { is_reverse: true, .. *self }
+        Style { is_reverse: true, ..self.clone() }
     }
 
     /// Returns a `Style` with the hidden property set.
@@ -154,7 +159,7 @@ impl Style {
     /// println!("{}", style.paint("ahoy"));
     /// ```
     pub fn hidden(&self) -> Style {
-        Style { is_hidden: true, .. *self }
+        Style { is_hidden: true, ..self.clone() }
     }
 
     /// Returns a `Style` with the strikethrough property set.
@@ -168,7 +173,7 @@ impl Style {
     /// println!("{}", style.paint("yo"));
     /// ```
     pub fn strikethrough(&self) -> Style {
-        Style { is_strikethrough: true, .. *self }
+        Style { is_strikethrough: true, ..self.clone() }
     }
 
     /// Returns a `Style` with the foreground colour property set.
@@ -182,7 +187,7 @@ impl Style {
     /// println!("{}", style.paint("hi"));
     /// ```
     pub fn fg(&self, foreground: Colour) -> Style {
-        Style { foreground: Some(foreground), .. *self }
+        Style { foreground: Some(foreground), ..self.clone() }
     }
 
     /// Returns a `Style` with the background colour property set.
@@ -196,7 +201,21 @@ impl Style {
     /// println!("{}", style.paint("eyyyy"));
     /// ```
     pub fn on(&self, background: Colour) -> Style {
-        Style { background: Some(background), .. *self }
+        Style { background: Some(background), ..self.clone() }
+    }
+
+    /// Returns a `Style` with the hyperlink URL set. You can pass the
+    /// hyperlink as either a `String` or a `&str`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Style;
+    /// let style = Style::new().hyperlink("https://example.org/");
+    /// println!("{}", style.paint("example link"));
+    /// ```
+    pub fn hyperlink<U: Into<Rc<str>>>(&self, url: U) -> Style {
+        Style { hyperlink_url: Some(url.into()), ..self.clone() }
     }
 
     /// Return true if this `Style` has no actual styles, and can be written
@@ -210,8 +229,8 @@ impl Style {
     /// assert_eq!(true,  Style::default().is_plain());
     /// assert_eq!(false, Style::default().bold().is_plain());
     /// ```
-    pub fn is_plain(self) -> bool {
-        self == Style::default()
+    pub fn is_plain(&self) -> bool {
+        self == &Style::default()
     }
 }
 
@@ -239,6 +258,7 @@ impl Default for Style {
             is_reverse: false,
             is_hidden: false,
             is_strikethrough: false,
+            hyperlink_url: None,
         }
     }
 }
@@ -457,6 +477,22 @@ impl Colour {
     /// ```
     pub fn on(self, background: Colour) -> Style {
         Style { foreground: Some(self), background: Some(background), .. Style::default() }
+    }
+
+    /// Returns a `Style` with the foreground colour set to this colour and the
+    /// hyperlink URL set. You can pass the hyperlink as either a `String` or a
+    /// `&str`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// let style = Colour::Blue.hyperlink("https://example.org/");
+    /// println!("{}", style.paint("example link"));
+    /// ```
+    pub fn hyperlink<U: Into<Rc<str>>>(self, url: U) -> Style {
+        Style { foreground: Some(self), hyperlink_url: Some(url.into()), ..Style::default() }
     }
 }
 
