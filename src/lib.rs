@@ -238,34 +238,28 @@
 #![warn(trivial_casts, trivial_numeric_casts)]
 #![warn(unused_extern_crates, unused_qualifications)]
 
-#[cfg(target_os="windows")]
-extern crate winapi;
 #[cfg(test)]
-#[macro_use]
-extern crate doc_comment;
-
-#[cfg(test)]
-doctest!("../README.md");
+doc_comment::doctest!("../README.md");
 
 mod ansi;
-pub use ansi::{Prefix, Infix, Suffix};
+pub use crate::ansi::{Prefix, Infix, Suffix};
 
 mod style;
-pub use style::{Colour, Style};
+pub use crate::style::{Colour, Style};
 
 /// Color is a type alias for `Colour`.
-pub use Colour as Color;
+pub use crate::Colour as Color;
 
 mod difference;
 mod display;
-pub use display::*;
+pub use crate::display::*;
 
 mod write;
 
 mod windows;
-pub use windows::*;
+pub use crate::windows::*;
 
 mod util;
-pub use util::*;
+pub use crate::util::*;
 
 mod debug;

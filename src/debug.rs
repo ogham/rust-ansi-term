@@ -1,6 +1,6 @@
 use std::fmt;
 
-use style::Style;
+use crate::style::Style;
 
 /// Styles have a special `Debug` implementation that only shows the fields that
 /// are set. Fields that haven’t been touched aren’t included in the output.
@@ -8,9 +8,14 @@ use style::Style;
 /// This behaviour gets bypassed when using the alternate formatting mode
 /// `format!("{:#?}")`.
 ///
-///     use ansi_term::Colour::{Red, Blue};
-///     assert_eq!("Style { fg(Red), on(Blue), bold, italic }",
-///                format!("{:?}", Red.on(Blue).bold().italic()));
+/// ```
+/// use ansi_term::Colour::{Red, Blue};
+///
+/// assert_eq!(
+///     "Style { fg(Red), on(Blue), bold, italic }",
+///     format!("{:?}", Red.on(Blue).bold().italic())
+/// );
+/// ```
 impl fmt::Debug for Style {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         if fmt.alternate() {
@@ -72,8 +77,8 @@ impl fmt::Debug for Style {
 
 #[cfg(test)]
 mod test {
-    use style::Colour::*;
-    use style::Style;
+    use crate::style::Colour::*;
+    use crate::style::Style;
 
     fn style() -> Style {
         Style::new()
@@ -102,7 +107,6 @@ mod test {
 
     #[test]
     fn long_and_detailed() {
-        extern crate regex;
         let expected_debug = "Style { fg(Blue), bold }";
         let expected_pretty_repat = r##"(?x)
         Style\s+\{\s+
