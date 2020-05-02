@@ -1,8 +1,8 @@
-use style::{Colour, Style};
-
 use std::fmt;
 
-use write::AnyWrite;
+use crate::style::{Colour, Style};
+use crate::write::AnyWrite;
+use crate::difference::Difference;
 
 
 // ---- generating ANSI codes ----
@@ -276,7 +276,7 @@ impl Colour {
 
 impl fmt::Display for Prefix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let f: &mut fmt::Write = f;
+        let f: &mut dyn fmt::Write = f;
         self.0.write_prefix(f)
     }
 }
@@ -284,15 +284,13 @@ impl fmt::Display for Prefix {
 
 impl fmt::Display for Infix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use difference::Difference;
-
         match Difference::between(&self.0, &self.1) {
             Difference::ExtraStyles(style) => {
-                let f: &mut fmt::Write = f;
+                let f: &mut dyn fmt::Write = f;
                 style.write_prefix(f)
             },
             Difference::Reset => {
-                let f: &mut fmt::Write = f;
+                let f: &mut dyn fmt::Write = f;
                 write!(f, "{}{}", RESET, self.1.prefix())
             },
             Difference::NoDifference => {
@@ -305,7 +303,7 @@ impl fmt::Display for Infix {
 
 impl fmt::Display for Suffix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let f: &mut fmt::Write = f;
+        let f: &mut dyn fmt::Write = f;
         self.0.write_suffix(f)
     }
 }
@@ -314,8 +312,8 @@ impl fmt::Display for Suffix {
 
 #[cfg(test)]
 mod test {
-    use style::Style;
-    use style::Colour::*;
+    use crate::style::Style;
+    use crate::style::Colour::*;
 
     macro_rules! test {
         ($name: ident: $style: expr; $input: expr => $result: expr) => {

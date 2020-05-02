@@ -1,5 +1,6 @@
-use display::*;
 use std::ops::Deref;
+
+use crate::display::*;
 
 /// Return a substring of the given ANSIStrings sequence, while keeping the formatting.
 pub fn sub_string<'a>(start: usize, len: usize, strs: &ANSIStrings<'a>) -> Vec<ANSIString<'static>> {
@@ -56,8 +57,8 @@ pub fn unstyled_len(strs: &ANSIStrings) -> usize {
 
 #[cfg(test)]
 mod test {
-    use Colour::*;
-    use display::*;
+    use crate::Colour::*;
+    use crate::display::*;
     use super::*;
 
     #[test]

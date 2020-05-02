@@ -142,8 +142,8 @@ impl Difference {
 mod test {
     use super::*;
     use super::Difference::*;
-    use style::Colour::*;
-    use style::Style;
+    use crate::style::Colour::*;
+    use crate::style::Style;
 
     fn style() -> Style {
         Style::new()
