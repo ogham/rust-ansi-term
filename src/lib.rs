@@ -254,7 +254,7 @@ mod style;
 pub use style::{Colour, Style};
 
 /// Color is a type alias for `Colour`.
-pub use Colour as Color;
+pub type Color = Colour;
 
 mod difference;
 mod display;
