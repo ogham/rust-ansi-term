@@ -240,11 +240,11 @@
 
 #[cfg(target_os="windows")]
 extern crate winapi;
-#[cfg(test)]
+#[cfg(doctest)]
 #[macro_use]
 extern crate doc_comment;
 
-#[cfg(test)]
+#[cfg(doctest)]
 doctest!("../README.md");
 
 mod ansi;
