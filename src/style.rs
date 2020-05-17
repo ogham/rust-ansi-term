@@ -69,7 +69,7 @@ impl Style {
     /// # Examples
     ///
     /// ```
-    /// use ansi_term::Colour;
+    /// use ansi_term::{Colour, Style};
     ///
     /// let style = Style::new().fg(Colour::Yellow).intense();
     /// println!("{}", style.paint("hey"));
