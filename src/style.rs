@@ -60,6 +60,38 @@ impl Style {
         Style::default()
     }
 
+    /// Returns a `Style` with the foreground colour set to the intense version
+    /// of this color, if applicable.
+    ///
+    /// Intense colors are the colors `8-15` of `Colour::Fixed`. All `Colour`s
+    /// other than `0-7` will be used as is in the resulting `Style`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// let style = Colour::Green.intense();
+    /// println!("{}", style.paint("hey"));
+    /// ```
+    pub fn intense(&self) -> Style {
+        let color = self.foreground;
+
+        let color = color.map(|color| match color {
+            Colour::Black => Colour::Fixed(8),
+            Colour::Red => Colour::Fixed(9),
+            Colour::Green => Colour::Fixed(10),
+            Colour::Yellow => Colour::Fixed(11),
+            Colour::Blue => Colour::Fixed(12),
+            Colour::Purple => Colour::Fixed(13),
+            Colour::Cyan => Colour::Fixed(14),
+            Colour::White => Colour::Fixed(15),
+            _ => color,
+        });
+
+        Style { foreground: color, .. *self }
+    }
+
     /// Returns a `Style` with the bold property set.
     ///
     /// # Examples
@@ -322,6 +354,36 @@ impl Colour {
     /// ```
     pub fn normal(self) -> Style {
         Style { foreground: Some(self), .. Style::default() }
+    }
+
+    /// Returns a `Style` with the foreground colour set to the intense version
+    /// of this color, if applicable.
+    ///
+    /// Intense colors are the colors `8-15` of `Colour::Fixed`. All `Colour`s
+    /// other than `0-7` will be used as is in the resulting `Style`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// let style = Colour::Green.intense();
+    /// println!("{}", style.paint("hey"));
+    /// ```
+    pub fn intense(self) -> Style {
+        let color = match self {
+            Colour::Black => Colour::Fixed(8),
+            Colour::Red => Colour::Fixed(9),
+            Colour::Green => Colour::Fixed(10),
+            Colour::Yellow => Colour::Fixed(11),
+            Colour::Blue => Colour::Fixed(12),
+            Colour::Purple => Colour::Fixed(13),
+            Colour::Cyan => Colour::Fixed(14),
+            Colour::White => Colour::Fixed(15),
+            _ => self,
+        };
+
+        Style { foreground: Some(color), .. Style::default() }
     }
 
     /// Returns a `Style` with the foreground colour set to this colour and the
