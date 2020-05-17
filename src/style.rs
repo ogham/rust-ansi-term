@@ -86,6 +86,7 @@ impl Style {
             Colour::Purple => Colour::Fixed(13),
             Colour::Cyan => Colour::Fixed(14),
             Colour::White => Colour::Fixed(15),
+            Colour::Fixed(color) if color < 8 => Colour::Fixed(color + 8),
             _ => color,
         });
 
@@ -380,6 +381,7 @@ impl Colour {
             Colour::Purple => Colour::Fixed(13),
             Colour::Cyan => Colour::Fixed(14),
             Colour::White => Colour::Fixed(15),
+            Colour::Fixed(color) if color < 8 => Colour::Fixed(color + 8),
             _ => self,
         };
 
