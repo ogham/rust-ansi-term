@@ -71,7 +71,7 @@ impl Style {
     /// ```
     /// use ansi_term::Colour;
     ///
-    /// let style = Colour::Green.intense();
+    /// let style = Style::new().fg(Colour::Yellow).intense();
     /// println!("{}", style.paint("hey"));
     /// ```
     pub fn intense(&self) -> Style {
