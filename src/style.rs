@@ -372,20 +372,7 @@ impl Colour {
     /// println!("{}", style.paint("hey"));
     /// ```
     pub fn intense(self) -> Style {
-        let color = match self {
-            Colour::Black => Colour::Fixed(8),
-            Colour::Red => Colour::Fixed(9),
-            Colour::Green => Colour::Fixed(10),
-            Colour::Yellow => Colour::Fixed(11),
-            Colour::Blue => Colour::Fixed(12),
-            Colour::Purple => Colour::Fixed(13),
-            Colour::Cyan => Colour::Fixed(14),
-            Colour::White => Colour::Fixed(15),
-            Colour::Fixed(color) if color < 8 => Colour::Fixed(color + 8),
-            _ => self,
-        };
-
-        Style { foreground: Some(color), .. Style::default() }
+        Style { foreground: Some(self), .. Style::default() }.intense()
     }
 
     /// Returns a `Style` with the foreground colour set to this colour and the
