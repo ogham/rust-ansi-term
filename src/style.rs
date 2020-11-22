@@ -56,8 +56,19 @@ impl Style {
     /// let style = Style::new();
     /// println!("{}", style.paint("hi"));
     /// ```
-    pub fn new() -> Style {
-        Style::default()
+    pub const fn new() -> Style {
+        Style {
+            foreground: None,
+            background: None,
+            is_bold: false,
+            is_dimmed: false,
+            is_italic: false,
+            is_underline: false,
+            is_blink: false,
+            is_reverse: false,
+            is_hidden: false,
+            is_strikethrough: false,
+        }
     }
 
     /// Returns a `Style` with the bold property set.
@@ -228,18 +239,7 @@ impl Default for Style {
     /// assert_eq!("txt", Style::default().paint("txt").to_string());
     /// ```
     fn default() -> Style {
-        Style {
-            foreground: None,
-            background: None,
-            is_bold: false,
-            is_dimmed: false,
-            is_italic: false,
-            is_underline: false,
-            is_blink: false,
-            is_reverse: false,
-            is_hidden: false,
-            is_strikethrough: false,
-        }
+        Style::new()
     }
 }
 
