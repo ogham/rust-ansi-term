@@ -231,7 +231,7 @@ impl Colour {
     /// use ansi_term::Colour::Green;
     ///
     /// assert_eq!("\x1b[0m",
-    ///            Green.suffix().to_string());
+    ///            Green.prefix().to_string());
     /// ```
     pub fn prefix(self) -> Prefix {
         Prefix(self.normal())
