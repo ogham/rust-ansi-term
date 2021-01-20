@@ -252,7 +252,7 @@ impl Default for Style {
 /// These use the standard numeric sequences.
 /// See <http://invisible-island.net/xterm/ctlseqs/ctlseqs.html>
 #[derive(PartialEq, Clone, Copy, Debug)]
-#[cfg_attr(feature = "derive_serde_style", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "derive_serde_style", derive(serde::Serialize))]
 pub enum Colour {
 
     /// Colour #0 (foreground code `30`, background code `40`).
@@ -460,6 +460,121 @@ impl Colour {
     }
 }
 
+#[cfg(feature = "derive_serde_style")]
+use std::fmt;
+
+#[cfg(feature = "derive_serde_style")]
+impl<'de> serde::de::Deserialize<'de> for Colour {
+    fn deserialize<D>(deserializer: D) -> Result<Colour, D::Error>
+    where
+        D: serde::de::Deserializer<'de>,
+    {
+        struct ColuorVisitor;
+        impl<'de> serde::de::Visitor<'de> for ColuorVisitor {
+            type Value = Colour;
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str(
+                    "`black`, `blue`, `cyan`, `green`, `purple`, `red`, `white`, `yellow`, `u8`, or `3 u8 array`",
+                )
+            }
+            fn visit_str<E>(self, value: &str) -> Result<Colour, E>
+            where
+                E: serde::de::Error,
+            {
+                match value.to_lowercase().trim() {
+                    "black" => Ok(Colour::Black),
+                    "blue" => Ok(Colour::Blue),
+                    "cyan" => Ok(Colour::Cyan),
+                    "green" => Ok(Colour::Green),
+                    "purple" => Ok(Colour::Purple),
+                    "red" => Ok(Colour::Red),
+                    "white" => Ok(Colour::White),
+                    "yellow" => Ok(Colour::Yellow),
+                    _ => Err(serde::de::Error::unknown_variant(
+                        &value, &[
+                            "black",
+                            "blue",
+                            "cyan",
+                            "green",
+                            "purple",
+                            "red",
+                            "white",
+                            "yellow",
+                            "u8",
+                            "u8 array"
+                        ],
+                    ))
+                }
+            }
+
+            fn visit_seq<M>(self, mut seq: M) -> Result<Colour, M::Error>
+            where
+                M: serde::de::SeqAccess<'de>,
+            {
+                let mut values = Vec::new();
+                if let Some(size) = seq.size_hint() {
+                    if size != 3 {
+                        return Err(serde::de::Error::invalid_length(
+                            size,
+                            &"a tuple of size 3",
+                        ))
+                    }
+                }
+                loop {
+                    match seq.next_element::<u8>() {
+                        Ok(Some(x)) => {
+                            values.push(x);
+                        },
+                        Ok(None) => break,
+                        Err(e) => {
+                            return Err(e);
+                        }
+                    }
+                }
+
+                if values.len() != 3 {
+                    return Err(serde::de::Error::invalid_length(
+                        values.len(),
+                        &"a tuple of size 3",
+                    ))
+                }
+
+                Ok(Colour::RGB(values[0], values[1], values[2]))
+            }
+
+            fn visit_map<M>(self, mut access: M) -> Result<Colour, M::Error>
+            where
+                M: serde::de::MapAccess<'de>,
+            {
+                if let Some(key) = access.next_key::<&str>()? {
+                    return match key.to_lowercase().trim() {
+                        "fixed" => Ok(Colour::Fixed(access.next_value::<u8>()?)),
+                        "rgb" => {
+                            let vec: [u8; 3] = access.next_value()?;
+                            Ok(Colour::RGB(vec[0], vec[1], vec[2]))
+                        }
+                        _ => Err(serde::de::Error::unknown_field(
+                            key,
+                            &["fixed", "rgb"],
+                        ))
+                    }
+                }
+                Err(serde::de::Error::missing_field("Fixed or RGB"))
+            }
+
+            fn visit_u64<E>(self, value: u64) -> Result<Colour, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(Colour::Fixed(value as u8))
+            }
+        }
+
+        deserializer.deserialize_any(ColuorVisitor)
+    }
+}
+
+
 impl From<Colour> for Style {
 
     /// You can turn a `Colour` into a `Style` with the foreground colour set
@@ -506,10 +621,22 @@ mod serde_json_tests {
 
         for colour in colours.into_iter() {
             let serialized = serde_json::to_string(&colour).unwrap();
-            let deserialized: Colour = serde_json::from_str(&serialized).unwrap();
+            let deserialized: Colour = serde_json::from_str::<Colour>(&serialized).unwrap();
 
             assert_eq!(colour, &deserialized);
         }
+    }
+
+    #[test]
+    fn colour_deserialization_each_kind() {
+        assert_eq!(Colour::Fixed(255), serde_json::from_str::<Colour>("{\"fixed\":255}").unwrap());
+        assert_eq!(Colour::Fixed(255), serde_json::from_str::<Colour>("{\"Fixed\":255}").unwrap());
+        assert_eq!(Colour::Fixed(254), serde_json::from_str::<Colour>("254").unwrap());
+        assert_eq!(Colour::Red, serde_json::from_str::<Colour>("\"red\"").unwrap());
+        assert_eq!(Colour::Red, serde_json::from_str::<Colour>("\"Red\"").unwrap());
+        assert_eq!(Colour::RGB(1, 2, 3), serde_json::from_str::<Colour>("{\"rgb\":[1,2,3]}").unwrap());
+        assert_eq!(Colour::RGB(1, 2, 3), serde_json::from_str::<Colour>("{\"RGB\":[1,2,3]}").unwrap());
+        assert_eq!(Colour::RGB(1, 2, 3), serde_json::from_str::<Colour>("[1,2,3]").unwrap());
     }
 
     #[test]
