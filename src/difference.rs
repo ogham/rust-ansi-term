@@ -1,11 +1,9 @@
 use super::Style;
 
-
-/// When printing out one coloured string followed by another, use one of
+/// When printing out one colored string followed by another, use one of
 /// these rules to figure out which *extra* control codes need to be sent.
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum Difference {
-
     /// Print out the control codes specified by this style to end up looking
     /// like the second string's styles.
     ExtraStyles(Style),
@@ -19,16 +17,14 @@ pub enum Difference {
     NoDifference,
 }
 
-
 impl Difference {
-
     /// Compute the 'style difference' required to turn an existing style into
     /// the given, second style.
     ///
     /// For example, to turn green text into green bold text, it's redundant
     /// to write a reset command then a second green+bold command, instead of
     /// just writing one bold command. This method should see that both styles
-    /// use the foreground colour green, and reduce it to a single command.
+    /// use the foreground color green, and reduce it to a single command.
     ///
     /// This method returns an enum value because it's not actually always
     /// possible to turn one style into another: for example, text could be
@@ -137,13 +133,12 @@ impl Difference {
     }
 }
 
-
 #[cfg(test)]
 mod test {
-    use super::*;
     use super::Difference::*;
-    use style::Colour::*;
-    use style::Style;
+    use super::*;
+    use crate::style::Color::*;
+    use crate::style::Style;
 
     fn style() -> Style {
         Style::new()
@@ -163,7 +158,7 @@ mod test {
     test!(lowercase:  Green.bold();   Green.normal()  => Reset);
     test!(nothing2:   Green.bold();   Green.bold()    => NoDifference);
 
-    test!(colour_change: Red.normal(); Blue.normal() => ExtraStyles(Blue.normal()));
+    test!(color_change: Red.normal(); Blue.normal() => ExtraStyles(Blue.normal()));
 
     test!(addition_of_blink:          style(); style().blink()          => ExtraStyles(style().blink()));
     test!(addition_of_dimmed:         style(); style().dimmed()         => ExtraStyles(style().dimmed()));

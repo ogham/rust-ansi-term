@@ -1,8 +1,12 @@
-use display::*;
+use crate::display::{ANSIString, ANSIStrings};
 use std::ops::Deref;
 
 /// Return a substring of the given ANSIStrings sequence, while keeping the formatting.
-pub fn sub_string<'a>(start: usize, len: usize, strs: &ANSIStrings<'a>) -> Vec<ANSIString<'static>> {
+pub fn sub_string<'a>(
+    start: usize,
+    len: usize,
+    strs: &ANSIStrings<'a>,
+) -> Vec<ANSIString<'static>> {
     let mut vec = Vec::new();
     let mut pos = start;
     let mut len_rem = len;
@@ -14,7 +18,7 @@ pub fn sub_string<'a>(start: usize, len: usize, strs: &ANSIStrings<'a>) -> Vec<A
             pos -= frag_len;
             continue;
         }
-        if len_rem <= 0 {
+        if len_rem == 0 {
             break;
         }
 
@@ -56,9 +60,8 @@ pub fn unstyled_len(strs: &ANSIStrings) -> usize {
 
 #[cfg(test)]
 mod test {
-    use Colour::*;
-    use display::*;
     use super::*;
+    use crate::Color::*;
 
     #[test]
     fn test() {
@@ -71,11 +74,7 @@ mod test {
         assert_eq!(unstyle(&a), "first-second-third");
         assert_eq!(unstyled_len(&a), 18);
 
-        let l2 = [
-            Black.paint("st"),
-            Red.paint("-second"),
-            White.paint("-t"),
-        ];
+        let l2 = [Black.paint("st"), Red.paint("-second"), White.paint("-t")];
         assert_eq!(sub_string(3, 11, &a).as_slice(), &l2);
     }
 }

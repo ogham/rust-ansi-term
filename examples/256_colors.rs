@@ -1,16 +1,15 @@
-extern crate ansi_term;
-use ansi_term::Colour;
+extern crate nu_ansi_term;
+use nu_ansi_term::Color;
 
-// This example prints out the 256 colours.
+// This example prints out the 256 colors.
 // They're arranged like this:
 //
-// - 0 to 8 are the eight standard colours.
-// - 9 to 15 are the eight bold colours.
-// - 16 to 231 are six blocks of six-by-six colour squares.
+// - 0 to 8 are the eight standard colors.
+// - 9 to 15 are the eight bold colors.
+// - 16 to 231 are six blocks of six-by-six color squares.
 // - 232 to 255 are shades of grey.
 
 fn main() {
-
     // First two lines
     for c in 0..8 {
         glow(c, c != 0);
@@ -67,7 +66,7 @@ fn main() {
 }
 
 fn glow(c: u8, light_bg: bool) {
-    let base = if light_bg { Colour::Black } else { Colour::White };
-    let style = base.on(Colour::Fixed(c));
+    let base = if light_bg { Color::Black } else { Color::White };
+    let style = base.on(Color::Fixed(c));
     print!("{}", style.paint(&format!(" {:3} ", c)));
 }
