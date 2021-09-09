@@ -250,7 +250,7 @@ impl Default for Style {
 /// to either the foreground or background colour.
 ///
 /// These use the standard numeric sequences.
-/// See <http://invisible-island.net/xterm/ctlseqs/ctlseqs.html>
+/// See <https://invisible-island.net/xterm/ctlseqs/ctlseqs.html>
 #[derive(PartialEq, Clone, Copy, Debug)]
 #[cfg_attr(feature = "derive_serde_style", derive(serde::Deserialize, serde::Serialize))]
 pub enum Colour {
