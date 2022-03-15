@@ -160,7 +160,7 @@ Secondly, that the `ANSIStrings` value works in the same way as its singular cou
 ## Byte strings
 
 This library also supports formatting `[u8]` byte strings; this supports applications working with text in an unknown encoding.
-`Style` and `Color` support painting `[u8]` values, resulting in an `ANSIByteString`.
+`Style` and `Color` support painting `[u8]` values, resulting in an `AnsiByteString`.
 This type does not implement `Display`, as it may not contain UTF-8, but it does provide a method `write_to` to write the result to any value that implements `Write`:
 
 ```rust
@@ -169,13 +169,13 @@ use nu_ansi_term::Color::Green;
 Green.paint("user data".as_bytes()).write_to(&mut std::io::stdout()).unwrap();
 ```
 
-Similarly, the type `ANSIByteStrings` supports writing a list of `ANSIByteString` values with minimal escape sequences:
+Similarly, the type `AnsiByteStrings` supports writing a list of `AnsiByteString` values with minimal escape sequences:
 
 ```rust
 use nu_ansi_term::Color::Green;
-use nu_ansi_term::ANSIByteStrings;
+use nu_ansi_term::AnsiByteStrings;
 
-ANSIByteStrings(&[
+AnsiByteStrings(&[
     Green.paint("user data 1\n".as_bytes()),
     Green.bold().paint("user data 2\n".as_bytes()),
 ]).write_to(&mut std::io::stdout()).unwrap();

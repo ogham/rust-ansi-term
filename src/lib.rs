@@ -192,9 +192,9 @@
 //!
 //! ```
 //! use nu_ansi_term::Color::Green;
-//! use nu_ansi_term::ANSIByteStrings;
+//! use nu_ansi_term::AnsiByteStrings;
 //!
-//! ANSIByteStrings(&[
+//! AnsiByteStrings(&[
 //!     Green.paint("user data 1\n".as_bytes()),
 //!     Green.bold().paint("user data 2\n".as_bytes()),
 //! ]).write_to(&mut std::io::stdout()).unwrap();

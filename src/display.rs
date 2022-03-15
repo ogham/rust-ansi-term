@@ -154,7 +154,7 @@ pub type AnsiByteStrings<'a> = AnsiGenericStrings<'a, [u8]>;
 
 /// A function to construct an `ANSIByteStrings` instance.
 #[allow(non_snake_case)]
-pub fn ANSIByteStrings<'a>(arg: &'a [AnsiByteString<'a>]) -> AnsiByteStrings<'a> {
+pub fn AnsiByteStrings<'a>(arg: &'a [AnsiByteString<'a>]) -> AnsiByteStrings<'a> {
     AnsiGenericStrings(arg)
 }
 
