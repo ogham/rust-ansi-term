@@ -7,8 +7,8 @@ use std::fmt;
 use std::io;
 use std::ops::Deref;
 
-/// An `ANSIGenericString` includes a generic string type and a `Style` to
-/// display that string.  `ANSIString` and `ANSIByteString` are aliases for
+/// An `AnsiGenericString` includes a generic string type and a `Style` to
+/// display that string.  `AnsiString` and `AnsiByteString` are aliases for
 /// this type on `str` and `\[u8]`, respectively.
 #[derive(PartialEq, Debug)]
 pub struct AnsiGenericString<'a, S: 'a + ToOwned + ?Sized>
@@ -19,14 +19,14 @@ where
     string: Cow<'a, S>,
 }
 
-/// Cloning an `ANSIGenericString` will clone its underlying string.
+/// Cloning an `AnsiGenericString` will clone its underlying string.
 ///
 /// # Examples
 ///
 /// ```
-/// use nu_ansi_term::ANSIString;
+/// use nu_ansi_term::AnsiString;
 ///
-/// let plain_string = ANSIString::from("a plain string");
+/// let plain_string = AnsiString::from("a plain string");
 /// let clone_string = plain_string.clone();
 /// assert_eq!(clone_string, plain_string);
 /// ```
@@ -57,7 +57,7 @@ where
 // that used it:
 //
 //     #[derive(PartialEq, Debug, Clone, Default)]
-//     pub struct TextCellContents(Vec<ANSIString<'static>>);
+//     pub struct TextCellContents(Vec<AnsiString<'static>>);
 //                                 ^^^^^^^^^^^^^^^^^^^^^^^^^
 //     error[E0277]: the trait `std::clone::Clone` is not implemented for `str`
 //
@@ -72,7 +72,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use nu_ansi_term::ANSIString;
+/// use nu_ansi_term::AnsiString;
 /// use nu_ansi_term::Color::Red;
 ///
 /// let red_string = Red.paint("a red string");
@@ -80,9 +80,9 @@ where
 /// ```
 ///
 /// ```
-/// use nu_ansi_term::ANSIString;
+/// use nu_ansi_term::AnsiString;
 ///
-/// let plain_string = ANSIString::from("a plain string");
+/// let plain_string = AnsiString::from("a plain string");
 /// assert_eq!(&*plain_string, "a plain string");
 /// ```
 pub type AnsiString<'a> = AnsiGenericString<'a, str>;
@@ -152,7 +152,7 @@ pub fn AnsiStrings<'a>(arg: &'a [AnsiString<'a>]) -> AnsiStrings<'a> {
 /// written with a minimum of control characters.
 pub type AnsiByteStrings<'a> = AnsiGenericStrings<'a, [u8]>;
 
-/// A function to construct an `ANSIByteStrings` instance.
+/// A function to construct an `AnsiByteStrings` instance.
 #[allow(non_snake_case)]
 pub fn AnsiByteStrings<'a>(arg: &'a [AnsiByteString<'a>]) -> AnsiByteStrings<'a> {
     AnsiGenericStrings(arg)
@@ -207,7 +207,7 @@ impl<'a> fmt::Display for AnsiString<'a> {
 }
 
 impl<'a> AnsiByteString<'a> {
-    /// Write an `ANSIByteString` to an `io::Write`.  This writes the escape
+    /// Write an `AnsiByteString` to an `io::Write`.  This writes the escape
     /// sequences for the associated `Style` around the bytes.
     pub fn write_to<W: io::Write>(&self, w: &mut W) -> io::Result<()> {
         let w: &mut dyn io::Write = w;
@@ -237,7 +237,7 @@ impl<'a> fmt::Display for AnsiStrings<'a> {
 }
 
 impl<'a> AnsiByteStrings<'a> {
-    /// Write `ANSIByteStrings` to an `io::Write`.  This writes the minimal
+    /// Write `AnsiByteStrings` to an `io::Write`.  This writes the minimal
     /// escape sequences for the associated `Style`s around each set of
     /// bytes.
     pub fn write_to<W: io::Write>(&self, w: &mut W) -> io::Result<()> {
@@ -272,7 +272,7 @@ where
             w.write_str(&window[1].string)?;
         }
 
-        // Write the final reset string after all of the ANSIStrings have been
+        // Write the final reset string after all of the AnsiStrings have been
         // written, *except* if the last one has no styles, because it would
         // have already been written by this point.
         if let Some(last) = self.0.last() {

@@ -143,7 +143,7 @@ impl Color {
     }
 }
 
-/// Like `ANSIString`, but only displays the style prefix.
+/// Like `AnsiString`, but only displays the style prefix.
 ///
 /// This type implements the `Display` trait, meaning it can be written to a
 /// `std::fmt` formatting without doing any extra allocation, and written to a
@@ -152,7 +152,7 @@ impl Color {
 #[derive(Clone, Copy, Debug)]
 pub struct Prefix(Style);
 
-/// Like `ANSIString`, but only displays the difference between two
+/// Like `AnsiString`, but only displays the difference between two
 /// styles.
 ///
 /// This type implements the `Display` trait, meaning it can be written to a
@@ -162,7 +162,7 @@ pub struct Prefix(Style);
 #[derive(Clone, Copy, Debug)]
 pub struct Infix(Style, Style);
 
-/// Like `ANSIString`, but only displays the style suffix.
+/// Like `AnsiString`, but only displays the style suffix.
 ///
 /// This type implements the `Display` trait, meaning it can be written to a
 /// `std::fmt` formatting without doing any extra allocation, and written to a

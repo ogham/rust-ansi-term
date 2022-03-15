@@ -1,7 +1,7 @@
 use crate::display::{AnsiString, AnsiStrings};
 use std::ops::Deref;
 
-/// Return a substring of the given ANSIStrings sequence, while keeping the formatting.
+/// Return a substring of the given AnsiStrings sequence, while keeping the formatting.
 pub fn sub_string<'a>(
     start: usize,
     len: usize,
@@ -49,7 +49,7 @@ pub fn unstyle(strs: &AnsiStrings) -> String {
     s
 }
 
-/// Return the unstyled length of ANSIStrings. This is equaivalent to `unstyle(strs).len()`.
+/// Return the unstyled length of AnsiStrings. This is equaivalent to `unstyle(strs).len()`.
 pub fn unstyled_len(strs: &AnsiStrings) -> usize {
     let mut l = 0;
     for i in strs.0.iter() {

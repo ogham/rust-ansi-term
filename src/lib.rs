@@ -5,11 +5,11 @@
 //! ## Basic usage
 //!
 //! There are three main types in this crate that you need to be
-//! concerned with: [`ANSIString`], [`Style`], and [`Color`].
+//! concerned with: [`AnsiString`], [`Style`], and [`Color`].
 //!
 //! A `Style` holds stylistic information: foreground and background colors,
 //! whether the text should be bold, or blinking, or other properties. The
-//! [`Color`] enum represents the available colors. And an [`ANSIString`] is a
+//! [`Color`] enum represents the available colors. And an [`AnsiString`] is a
 //! string paired with a [`Style`].
 //!
 //! [`Color`] is also available as an alias to `Color`.
@@ -26,12 +26,12 @@
 //!
 //! It’s important to note that the `paint` method does *not* actually return a
 //! string with the ANSI control characters surrounding it. Instead, it returns
-//! an [`ANSIString`] value that has a [`Display`] implementation that, when
+//! an [`AnsiString`] value that has a [`Display`] implementation that, when
 //! formatted, returns the characters. This allows strings to be printed with a
 //! minimum of [`String`] allocations being performed behind the scenes.
 //!
 //! If you *do* want to get at the escape codes, then you can convert the
-//! [`ANSIString`] to a string as you would any other `Display` value:
+//! [`AnsiString`] to a string as you would any other `Display` value:
 //!
 //! ```
 //! use nu_ansi_term::Color::Red;
@@ -87,7 +87,7 @@
 //! ```
 //!
 //! You can turn a `Color` into a `Style` with the [`normal`] method.
-//! This will produce the exact same `ANSIString` as if you just used the
+//! This will produce the exact same `AnsiString` as if you just used the
 //! `paint` method on the `Color` directly, but it’s useful in certain cases:
 //! for example, you may have a method that returns `Styles`, and need to
 //! represent both the “red bold” and “red, but not bold” styles with values of
@@ -141,8 +141,8 @@
 //! strings.
 //!
 //! This crate can optimise the ANSI codes that get printed in situations like
-//! this, making life easier for your terminal renderer. The [`ANSIStrings`]
-//! type takes a slice of several [`ANSIString`] values, and will iterate over
+//! this, making life easier for your terminal renderer. The [`AnsiStrings`]
+//! type takes a slice of several [`AnsiString`] values, and will iterate over
 //! each of them, printing only the codes for the styles that need to be updated
 //! as part of its formatting routine.
 //!
@@ -151,24 +151,24 @@
 //!
 //! ```
 //! use nu_ansi_term::Color::Red;
-//! use nu_ansi_term::{ANSIString, ANSIStrings};
+//! use nu_ansi_term::{AnsiString, AnsiStrings};
 //!
 //! let some_value = format!("{:b}", 42);
-//! let strings: &[ANSIString<'static>] = &[
+//! let strings: &[AnsiString<'static>] = &[
 //!     Red.paint("["),
 //!     Red.bold().paint(some_value),
 //!     Red.paint("]"),
 //! ];
 //!
-//! println!("Value: {}", ANSIStrings(strings));
+//! println!("Value: {}", AnsiStrings(strings));
 //! ```
 //!
 //! There are several things to note here. Firstly, the [`paint`] method can take
-//! *either* an owned [`String`] or a borrowed [`&str`]. Internally, an [`ANSIString`]
+//! *either* an owned [`String`] or a borrowed [`&str`]. Internally, an [`AnsiString`]
 //! holds a copy-on-write ([`Cow`]) string value to deal with both owned and
 //! borrowed strings at the same time. This is used here to display a `String`,
 //! the result of the `format!` call, using the same mechanism as some
-//! statically-available `&str` slices. Secondly, that the [`ANSIStrings`] value
+//! statically-available `&str` slices. Secondly, that the [`AnsiStrings`] value
 //! works in the same way as its singular counterpart, with a [`Display`]
 //! implementation that only performs the formatting when required.
 //!
@@ -176,7 +176,7 @@
 //!
 //! This library also supports formatting `\[u8]` byte strings; this supports
 //! applications working with text in an unknown encoding.  [`Style`] and
-//! [`Color`] support painting `\[u8]` values, resulting in an [`ANSIByteString`].
+//! [`Color`] support painting `\[u8]` values, resulting in an [`AnsiByteString`].
 //! This type does not implement [`Display`], as it may not contain UTF-8, but
 //! it does provide a method [`write_to`] to write the result to any value that
 //! implements [`Write`]:
@@ -187,8 +187,8 @@
 //! Green.paint("user data".as_bytes()).write_to(&mut std::io::stdout()).unwrap();
 //! ```
 //!
-//! Similarly, the type [`ANSIByteStrings`] supports writing a list of
-//! [`ANSIByteString`] values with minimal escape sequences:
+//! Similarly, the type [`AnsiByteStrings`] supports writing a list of
+//! [`AnsiByteString`] values with minimal escape sequences:
 //!
 //! ```
 //! use nu_ansi_term::Color::Green;
@@ -210,12 +210,12 @@
 //! [`Style::new()`]: struct.Style.html#method.new
 //! [`Color`]: enum.Color.html
 //! [`Color`]: enum.Color.html
-//! [`ANSIString`]: type.ANSIString.html
-//! [`ANSIStrings`]: type.ANSIStrings.html
-//! [`ANSIByteString`]: type.ANSIByteString.html
-//! [`ANSIByteStrings`]: type.ANSIByteStrings.html
-//! [`write_to`]: type.ANSIByteString.html#method.write_to
-//! [`paint`]: type.ANSIByteString.html#method.write_to
+//! [`AnsiString`]: type.AnsiString.html
+//! [`AnsiStrings`]: type.AnsiStrings.html
+//! [`AnsiByteString`]: type.AnsiByteString.html
+//! [`AnsiByteStrings`]: type.AnsiByteStrings.html
+//! [`write_to`]: type.AnsiByteString.html#method.write_to
+//! [`paint`]: type.AnsiByteString.html#method.write_to
 //! [`normal`]: enum.Color.html#method.normal
 //!
 //! [`bold`]: struct.Style.html#method.bold
