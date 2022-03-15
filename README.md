@@ -12,7 +12,7 @@ This crate works with [Cargo](http://crates.io). Add the following to your `Carg
 
 ```toml
 [dependencies]
-nu_ansi_term = "0.13"
+nu_ansi_term = "0.45"
 ```
 
 ## Basic usage
