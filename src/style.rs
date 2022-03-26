@@ -366,6 +366,9 @@ pub enum Color {
 
     /// A 24-bit Rgb color, as specified by ISO-8613-3.
     Rgb(u8, u8, u8),
+
+    /// The default color (foreground code `39`, background codr `49`).
+    Default,
 }
 
 impl Default for Color {
