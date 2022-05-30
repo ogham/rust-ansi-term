@@ -4,9 +4,9 @@
 
 This is a library for controlling colors and formatting, such as red bold text or blue underlined text, on ANSI terminals.
 
-### [View the Rustdoc](https://docs.rs/nu_ansi_term/)
+## [View the Rustdoc](https://docs.rs/nu_ansi_term/)
 
-# Installation
+## Installation
 
 This crate works with [Cargo](http://crates.io). Add the following to your `Cargo.toml` dependencies section:
 
