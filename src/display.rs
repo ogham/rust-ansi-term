@@ -5,7 +5,6 @@ use crate::write::AnyWrite;
 use std::borrow::Cow;
 use std::fmt;
 use std::io;
-use std::ops::Deref;
 
 /// An `AnsiGenericString` includes a generic string type and a `Style` to
 /// display that string.  `AnsiString` and `AnsiByteString` are aliases for
@@ -15,8 +14,8 @@ pub struct AnsiGenericString<'a, S: 'a + ToOwned + ?Sized>
 where
     <S as ToOwned>::Owned: fmt::Debug,
 {
-    style: Style,
-    string: Cow<'a, S>,
+    pub(crate) style: Style,
+    pub(crate) string: Cow<'a, S>,
 }
 
 /// Cloning an `AnsiGenericString` will clone its underlying string.
@@ -83,7 +82,6 @@ where
 /// use nu_ansi_term::AnsiString;
 ///
 /// let plain_string = AnsiString::from("a plain string");
-/// assert_eq!(&*plain_string, "a plain string");
 /// ```
 pub type AnsiString<'a> = AnsiGenericString<'a, str>;
 
@@ -116,17 +114,6 @@ where
     /// Directly access the style mutably
     pub fn style_ref_mut(&mut self) -> &mut Style {
         &mut self.style
-    }
-}
-
-impl<'a, S: 'a + ToOwned + ?Sized> Deref for AnsiGenericString<'a, S>
-where
-    <S as ToOwned>::Owned: fmt::Debug,
-{
-    type Target = S;
-
-    fn deref(&self) -> &S {
-        self.string.deref()
     }
 }
 

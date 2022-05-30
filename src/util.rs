@@ -12,8 +12,7 @@ pub fn sub_string<'a>(
     let mut len_rem = len;
 
     for i in strs.0.iter() {
-        let fragment = i.deref();
-        let frag_len = fragment.len();
+        let frag_len = i.string.len();
         if pos >= frag_len {
             pos -= frag_len;
             continue;
@@ -25,7 +24,7 @@ pub fn sub_string<'a>(
         let end = pos + len_rem;
         let pos_end = if end >= frag_len { frag_len } else { end };
 
-        vec.push(i.style_ref().paint(String::from(&fragment[pos..pos_end])));
+        vec.push(i.style_ref().paint(String::from(&i.string[pos..pos_end])));
 
         if end <= frag_len {
             break;
@@ -43,7 +42,7 @@ pub fn unstyle(strs: &AnsiStrings) -> String {
     let mut s = String::new();
 
     for i in strs.0.iter() {
-        s += i.deref();
+        s += i.string.deref();
     }
 
     s
@@ -53,7 +52,7 @@ pub fn unstyle(strs: &AnsiStrings) -> String {
 pub fn unstyled_len(strs: &AnsiStrings) -> usize {
     let mut l = 0;
     for i in strs.0.iter() {
-        l += i.deref().len();
+        l += i.string.len();
     }
     l
 }
