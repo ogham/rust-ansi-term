@@ -311,6 +311,87 @@ impl fmt::Display for Suffix {
 }
 
 
+#[cfg(feature = "ansi_colours")]
+impl Colour {
+
+    /// Constructs `Fixed` colour which approximates given 24-bit sRGB colour.
+    ///
+    /// Tries to find the closest matching colour from the 256-colour ANSI
+    /// pallet and returns fixed colour with that index.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// assert_eq!(Colour::Fixed( 16), Colour::approx_rgb(  0,   0,   0));
+    /// assert_eq!(Colour::Fixed( 16), Colour::approx_rgb(  0,   1,   2));
+    /// assert_eq!(Colour::Fixed( 67), Colour::approx_rgb( 95, 135, 175));
+    /// assert_eq!(Colour::Fixed(231), Colour::approx_rgb(255, 255, 255));
+    /// ```
+    pub fn approx_rgb(r: u8, g: u8, b: u8) -> Self {
+        Self::Fixed(ansi_colours::ansi256_from_rgb((r, g, b)))
+    }
+
+    /// Converts the colour into 256-colour-compatible format.
+    ///
+    /// If the colour is `RGB` converts it into `Fixed` representation
+    /// approximating the 24-bit sRGB colour by an index in the 256-colour ANSI
+    /// palette.  Otherwise, returns the colour unchanged.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// assert_eq!(Colour::Red,        Colour::Red.into_256());
+    /// assert_eq!(Colour::Fixed( 11), Colour::Fixed(11).into_256());
+    /// assert_eq!(Colour::Fixed( 16), Colour::RGB(  0,   0,   0).into_256());
+    /// assert_eq!(Colour::Fixed( 16), Colour::RGB(  0,   1,   2).into_256());
+    /// assert_eq!(Colour::Fixed( 67), Colour::RGB( 95, 135, 175).into_256());
+    /// assert_eq!(Colour::Fixed(231), Colour::RGB(255, 255, 255).into_256());
+    /// ```
+    pub fn into_256(self) -> Self {
+        if let Self::RGB(r, g, b) = self {
+            Self::Fixed(ansi_colours::ansi256_from_rgb((r, g, b)))
+        } else {
+            self
+        }
+    }
+
+    /// Converts the colour into 24-bit sRGB representation.
+    ///
+    /// `RGB` variant is returned unchanged (since they are already in 24-bit
+    /// sRGB representation).
+    ///
+    /// `Fixed` variants are converted by taking corresponding entry from the
+    /// default 256-colour XTerm palette.  Note that the first 16 colours
+    /// (so-called system colours) are often configurable by the user so this
+    /// conversion may give different result than what user would see if `Fixed`
+    /// variant was used.
+    ///
+    /// Lastly, `Black` through `White` variants are treated as `Fixed` variant
+    /// with index 0 through 7.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ansi_term::Colour;
+    ///
+    /// assert_eq!((  0,   0,   0), Colour::Fixed( 16).into_rgb());
+    /// assert_eq!(( 95, 135, 175), Colour::Fixed( 67).into_rgb());
+    /// assert_eq!((255, 255, 255), Colour::Fixed(231).into_rgb());
+    /// assert_eq!((238, 238, 238), Colour::Fixed(255).into_rgb());
+    /// assert_eq!(( 42,  24,   0), Colour::RGB(42, 24, 0).into_rgb());
+    /// ```
+    pub fn into_rgb(self) -> (u8, u8, u8) {
+        match self.into_index() {
+            Ok(idx) => ansi_colours::rgb_from_ansi256(idx),
+            Err(rgb) => rgb
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod test {

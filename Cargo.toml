@@ -21,6 +21,11 @@ version = "1.0.90"
 features = ["derive"]
 optional = true
 
+[dependencies.ansi_colours]
+version = "1.1.1"
+default-features = false
+optional = true
+
 [target.'cfg(target_os="windows")'.dependencies.winapi]
 version = "0.3.4"
 features = ["consoleapi", "errhandlingapi", "fileapi", "handleapi", "processenv"]
