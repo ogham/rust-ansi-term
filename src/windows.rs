@@ -59,3 +59,10 @@ pub fn enable_ansi_support() -> Result<(), u32> {
 
     return Ok(());
 }
+
+/// Enable ANSI support on Windows 10. This is a no-op on non-windows platforms
+#[cfg(not(windows))]
+#[inline]
+pub fn enable_ansi_support() -> Result<(), u32> {
+    Ok(())
+}
