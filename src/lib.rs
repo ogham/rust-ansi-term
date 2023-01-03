@@ -1,21 +1,20 @@
 //! This is a library for controlling colours and formatting, such as
 //! red bold text or blue underlined text, on ANSI terminals.
 //!
-//!
 //! ## Basic usage
 //!
 //! There are three main types in this crate that you need to be
 //! concerned with: [`ANSIString`], [`Style`], and [`Colour`].
 //!
-//! A `Style` holds stylistic information: foreground and background colours,
+//! A [`Style`] holds stylistic information: foreground and background colours,
 //! whether the text should be bold, or blinking, or other properties. The
-//! [`Colour`] enum represents the available colours. And an [`ANSIString`] is a
-//! string paired with a [`Style`].
+//! [`Colour`] enum represents the available colours. And an [`ANSIString`] is
+//! a string paired with a [`Style`].
 //!
-//! [`Color`] is also available as an alias to `Colour`.
+//! [`Color`] is also available as an alias to [`Colour`].
 //!
-//! To format a string, call the `paint` method on a `Style` or a `Colour`,
-//! passing in the string you want to format as the argument. For example,
+//! To format a string, call the [`Style::paint`] or [`Colour::paint`] method,
+//! passing in the string you want to format as the argument.  For example,
 //! here’s how to get some red text:
 //!
 //! ```
@@ -24,29 +23,50 @@
 //! println!("This is in red: {}", Red.paint("a red string"));
 //! ```
 //!
-//! It’s important to note that the `paint` method does *not* actually return a
-//! string with the ANSI control characters surrounding it. Instead, it returns
-//! an [`ANSIString`] value that has a [`Display`] implementation that, when
-//! formatted, returns the characters. This allows strings to be printed with a
-//! minimum of [`String`] allocations being performed behind the scenes.
+//! Note that the `paint` method doesn’t return a string with the ANSI control
+//! sequence surrounding it.  Instead, it returns an [`ANSIString`] value which
+//! has a [`Display`] implementation that outputs the sequence.  This allows
+//! strings to be printed without additional [`String`] allocations.
 //!
-//! If you *do* want to get at the escape codes, then you can convert the
-//! [`ANSIString`] to a string as you would any other `Display` value:
+//! In fact, [`ANSIString`] is a generic type which doesn’t require the element
+//! to be a [`String`] at all.  Any type which implements [`Display`] can be
+//! painted.  Other related traits (such as [`LowerHex`]) are supported as well.
+//! For example:
 //!
 //! ```
+//! use ansi_term::Colour::{Red, Green, Blue};
+//!
+//! let red = Red.paint(255);
+//! let green = Green.paint(248);
+//! let blue = Blue.paint(231);
+//!
+//! let latte = format!("rgb({red}, {green}, {blue})");
+//! assert_eq!("rgb(\u{1b}[31m255\u{1b}[0m, \
+//!                 \u{1b}[32m248\u{1b}[0m, \
+//!                 \u{1b}[34m231\u{1b}[0m)", latte);
+//!
+//! let latte = format!("#{red:02x}{green:02x}{blue:02x}");
+//! assert_eq!("#\u{1b}[31mff\u{1b}[0m\
+//!              \u{1b}[32mf8\u{1b}[0m\
+//!              \u{1b}[34me7\u{1b}[0m", latte);
+//! ```
+//!
+//! If you want to get at the escape codes, you can convert an [`ANSIString`] to
+//! a string with [`to_string`](ToString::to_string) method as you would any
+//! other [`Display`] value:
+//!
+//! ```rust
 //! use ansi_term::Colour::Red;
 //!
 //! let red_string = Red.paint("a red string").to_string();
 //! ```
 //!
-//!
 //! ## Bold, underline, background, and other styles
 //!
 //! For anything more complex than plain foreground colour changes, you need to
-//! construct `Style` values themselves, rather than beginning with a `Colour`.
-//! You can do this by chaining methods based on a new `Style`, created with
-//! [`Style::new()`]. Each method creates a new style that has that specific
-//! property set. For example:
+//! construct [`Style`] values.  You can do this by chaining methods based on
+//! a object created with [`Style::new`].  Each method creates a new style that
+//! has that specific property set.  For example:
 //!
 //! ```
 //! use ansi_term::Style;
@@ -75,7 +95,7 @@
 //! background colours.
 //!
 //! In some cases, you may find it easier to change the foreground on an
-//! existing `Style` rather than starting from the appropriate `Colour`.
+//! existing [`Style`] rather than starting from the appropriate [`Colour`].
 //! You can do this using the [`fg`] method:
 //!
 //! ```
@@ -86,13 +106,10 @@
 //! println!("Also yellow on blue: {}", Cyan.on(Blue).fg(Yellow).paint("zow!"));
 //! ```
 //!
-//! You can turn a `Colour` into a `Style` with the [`normal`] method.
-//! This will produce the exact same `ANSIString` as if you just used the
-//! `paint` method on the `Colour` directly, but it’s useful in certain cases:
-//! for example, you may have a method that returns `Styles`, and need to
-//! represent both the “red bold” and “red, but not bold” styles with values of
-//! the same type. The `Style` struct also has a [`Default`] implementation if you
-//! want to have a style with *nothing* set.
+//! You can turn a [`Colour`] into a [`Style`] with the [`normal`] method.  This
+//! produces the exact same [`ANSIString`] as if you just used the
+//! [`Colour::paint`] method directly, but it’s useful if you need to represent
+//! both the “red bold” and “red, but not bold” with values of the same type.
 //!
 //! ```
 //! use ansi_term::Style;
@@ -102,12 +119,11 @@
 //! Style::default().paint("a completely regular string");
 //! ```
 //!
-//!
 //! ## Extended colours
 //!
-//! You can access the extended range of 256 colours by using the `Colour::Fixed`
-//! variant, which takes an argument of the colour number to use. This can be
-//! included wherever you would use a `Colour`:
+//! You can access the 256-colour palette by using the [`Colour::Fixed`]
+//! variant.  It takes an argument of the colour number to use.  This can be
+//! included wherever you would use a [`Colour`]:
 //!
 //! ```
 //! use ansi_term::Colour::Fixed;
@@ -116,13 +132,8 @@
 //! Fixed(221).on(Fixed(124)).paint("Mustard in the ketchup");
 //! ```
 //!
-//! The first sixteen of these values are the same as the normal and bold
-//! standard colour variants. There’s nothing stopping you from using these as
-//! `Fixed` colours instead, but there’s nothing to be gained by doing so
-//! either.
-//!
-//! You can also access full 24-bit colour by using the `Colour::RGB` variant,
-//! which takes separate `u8` arguments for red, green, and blue:
+//! You can also access full 24-bit colour by using the [`Colour::RGB`] variant,
+//! which takes separate red, green, and blue arguments:
 //!
 //! ```
 //! use ansi_term::Colour::RGB;
@@ -154,80 +165,55 @@
 //! use ansi_term::{ANSIString, ANSIStrings};
 //!
 //! let some_value = format!("{:b}", 42);
-//! let strings: &[ANSIString<'static>] = &[
-//!     Red.paint("["),
-//!     Red.bold().paint(some_value),
-//!     Red.paint("]"),
+//! let strings: &[ANSIString<_>] = &[
+//!     Red.paint_cow("["),
+//!     Red.bold().paint_cow(some_value),
+//!     Red.paint_cow("]"),
 //! ];
 //!
 //! println!("Value: {}", ANSIStrings(strings));
 //! ```
 //!
-//! There are several things to note here. Firstly, the [`paint`] method can take
-//! *either* an owned [`String`] or a borrowed [`&str`]. Internally, an [`ANSIString`]
-//! holds a copy-on-write ([`Cow`]) string value to deal with both owned and
-//! borrowed strings at the same time. This is used here to display a `String`,
-//! the result of the `format!` call, using the same mechanism as some
-//! statically-available `&str` slices. Secondly, that the [`ANSIStrings`] value
-//! works in the same way as its singular counterpart, with a [`Display`]
-//! implementation that only performs the formatting when required.
+//! In this example, the [`paint_cow`](Style::paint_cow) method can take
+//! *either* an owned [`String`] or a borrowed [`&str`] value.  It converts the
+//! argument into a copy-on-write string ([`Cow`]) and wraps that inside of an
+//! [`ANSIString`].
+//!
+//! The [`ANSIStrings`] value works in the same way as its singular counterpart,
+//! with a [`Display`] implementation that only performs the formatting when
+//! required.
 //!
 //! ## Byte strings
 //!
-//! This library also supports formatting `\[u8]` byte strings; this supports
-//! applications working with text in an unknown encoding.  [`Style`] and
-//! [`Colour`] support painting `\[u8]` values, resulting in an [`ANSIByteString`].
-//! This type does not implement [`Display`], as it may not contain UTF-8, but
-//! it does provide a method [`write_to`] to write the result to any value that
-//! implements [`Write`]:
+//! This library also handles formatting `[u8]` byte strings.  This supports
+//! applications working with text in an unknown encoding.  More specifically,
+//! any type which implements `AsRef<[u8]>` can be painted.  For such types
+//! [`ANSIString::write_to`] method is provided to write the value to any object
+//! that implements [`Write`](std::io::Write):
 //!
 //! ```
 //! use ansi_term::Colour::Green;
 //!
-//! Green.paint("user data".as_bytes()).write_to(&mut std::io::stdout()).unwrap();
+//! Green.paint("user data".as_bytes())
+//!     .write_to(&mut std::io::stdout()).unwrap();
 //! ```
 //!
-//! Similarly, the type [`ANSIByteStrings`] supports writing a list of
-//! [`ANSIByteString`] values with minimal escape sequences:
+//! [`Cow`]: std::borrow::Cow
+//! [`Display`]: core::fmt::Display
+//! [`LowerHex`]: core::fmt::LowerHex
 //!
-//! ```
-//! use ansi_term::Colour::Green;
-//! use ansi_term::ANSIByteStrings;
+//! [`normal`]: Colour::normal
 //!
-//! ANSIByteStrings(&[
-//!     Green.paint("user data 1\n".as_bytes()),
-//!     Green.bold().paint("user data 2\n".as_bytes()),
-//! ]).write_to(&mut std::io::stdout()).unwrap();
-//! ```
-//!
-//! [`Cow`]: https://doc.rust-lang.org/std/borrow/enum.Cow.html
-//! [`Display`]: https://doc.rust-lang.org/std/fmt/trait.Display.html
-//! [`Default`]: https://doc.rust-lang.org/std/default/trait.Default.html
-//! [`String`]: https://doc.rust-lang.org/std/string/struct.String.html
-//! [`&str`]: https://doc.rust-lang.org/std/primitive.str.html
-//! [`Write`]: https://doc.rust-lang.org/std/io/trait.Write.html
-//! [`Style`]: struct.Style.html
-//! [`Style::new()`]: struct.Style.html#method.new
-//! [`Color`]: enum.Color.html
-//! [`Colour`]: enum.Colour.html
-//! [`ANSIString`]: type.ANSIString.html
-//! [`ANSIStrings`]: type.ANSIStrings.html
-//! [`ANSIByteString`]: type.ANSIByteString.html
-//! [`ANSIByteStrings`]: type.ANSIByteStrings.html
-//! [`write_to`]: type.ANSIByteString.html#method.write_to
-//! [`paint`]: type.ANSIByteString.html#method.write_to
-//! [`normal`]: enum.Colour.html#method.normal
-//!
-//! [`bold`]: struct.Style.html#method.bold
-//! [`dimmed`]: struct.Style.html#method.dimmed
-//! [`italic`]: struct.Style.html#method.italic
-//! [`underline`]: struct.Style.html#method.underline
-//! [`blink`]: struct.Style.html#method.blink
-//! [`reverse`]: struct.Style.html#method.reverse
-//! [`hidden`]: struct.Style.html#method.hidden
-//! [`strikethrough`]: struct.Style.html#method.strikethrough
-//! [`fg`]: struct.Style.html#method.fg
-//! [`on`]: struct.Style.html#method.on
+//! [`bold`]: Style::bold
+//! [`dimmed`]: Style::dimmed
+//! [`italic`]: Style::italic
+//! [`underline`]: Style::underline
+//! [`blink`]: Style::blink
+//! [`reverse`]: Style::reverse
+//! [`hidden`]: Style::hidden
+//! [`strikethrough`]: Style::strikethrough
+//! [`fg`]: Style::fg
+//! [`on`]: Style::on
 
 #![crate_name = "ansi_term"]
 #![crate_type = "rlib"]
@@ -260,12 +246,9 @@ mod difference;
 mod display;
 pub use display::*;
 
-mod write;
-
 mod windows;
 pub use windows::*;
 
-mod util;
-pub use util::*;
+pub mod substring;
 
 mod debug;
