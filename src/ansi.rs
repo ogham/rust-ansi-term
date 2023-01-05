@@ -1,74 +1,135 @@
 use style::{Colour, Style};
 
 use std::fmt;
-
-use write::AnyWrite;
+use std::str;
 
 
 // ---- generating ANSI codes ----
 
-impl Style {
+/// A buffer to write prefix ANSI code into.  This allows the entire prefix code
+/// to be formatted and then sent to Formatter or Write all at once.
+// The length 54 corresponds to maximum number of bytes write_impl might
+// write.  It is 2 bytes for `\x1B[` prefix, 9*2 bytes for all possible
+// single-digit codes and 2*17 for foreground and background.
+pub(super) struct PrefixBuffer([u8; 54]);
 
-    /// Write any bytes that go *before* a piece of text to the given writer.
-    fn write_prefix<W: AnyWrite + ?Sized>(&self, f: &mut W) -> Result<(), W::Error> {
+enum ColourCategory {
+    Simple(u8),
+    Fixed(u8),
+    RGB(u8, u8, u8)
+}
 
+impl Default for PrefixBuffer {
+    fn default() -> Self {
+        PrefixBuffer([0; 54])
+    }
+}
+
+impl PrefixBuffer {
+    /// Returns ANSI code for given style.
+    pub fn write(&'_ mut self, style: &Style) -> &'_ str {
+        self.write_impl(style, false)
+    }
+
+    /// Returns ANSI code for given style including a reset sequence.
+    pub fn write_with_reset(&'_ mut self, style: &Style) -> &'_ str {
+        self.write_impl(style, true)
+    }
+
+    /// Returns ANSI code for given style optionally including a reset sequence.
+    fn write_impl(&'_ mut self, style: &Style, with_reset: bool) -> &'_ str {
         // If there are actually no styles here, then don’t write *any* codes
         // as the prefix. An empty ANSI code may not affect the terminal
         // output at all, but a user may just want a code-free string.
-        if self.is_plain() {
-            return Ok(());
+        if style.is_plain() {
+            return if with_reset { RESET } else { "" };
         }
 
         // Write the codes’ prefix, then write numbers, separated by
         // semicolons, for each text style we want to apply.
-        write!(f, "\x1B[")?;
-        let mut written_anything = false;
+        self.0[..2].copy_from_slice(b"\x1B[");
+        let mut idx = 2;
 
         {
-            let mut write_char = |c| {
-                if written_anything { write!(f, ";")?; }
-                written_anything = true;
-                write!(f, "{}", c)?;
-                Ok(())
+            let mut write_char = |byte: u8| {
+                self.0[idx] = byte;
+                self.0[idx + 1] = b';';
+                idx += 2;
             };
 
-            if self.is_bold           { write_char('1')? }
-            if self.is_dimmed         { write_char('2')? }
-            if self.is_italic         { write_char('3')? }
-            if self.is_underline      { write_char('4')? }
-            if self.is_blink          { write_char('5')? }
-            if self.is_reverse        { write_char('7')? }
-            if self.is_hidden         { write_char('8')? }
-            if self.is_strikethrough  { write_char('9')? }
+            if with_reset             { write_char(b'0'); }
+            if style.is_bold          { write_char(b'1'); }
+            if style.is_dimmed        { write_char(b'2'); }
+            if style.is_italic        { write_char(b'3'); }
+            if style.is_underline     { write_char(b'4'); }
+            if style.is_blink         { write_char(b'5'); }
+            if style.is_reverse       { write_char(b'7'); }
+            if style.is_hidden        { write_char(b'8'); }
+            if style.is_strikethrough { write_char(b'9'); }
         }
 
         // The foreground and background colours, if specified, need to be
         // handled specially because the number codes are more complicated.
-        // (see `write_background_code` and `write_foreground_code`)
-        if let Some(bg) = self.background {
-            if written_anything { write!(f, ";")?; }
-            written_anything = true;
-            bg.write_background_code(f)?;
+        // (see `write_colour_category`)
+        if let Some(bg) = style.background {
+            idx = self.write_colour_category(idx, b'4', bg.colour_category());
+        }
+        if let Some(fg) = style.foreground {
+            idx = self.write_colour_category(idx, b'3', fg.colour_category());
         }
 
-        if let Some(fg) = self.foreground {
-            if written_anything { write!(f, ";")?; }
-            fg.write_foreground_code(f)?;
-        }
+        // Replace final `;` with a `m` which indicates end of the ANSI code.
+        self.0[idx - 1] = b'm';
 
-        // All the codes end with an `m`, because reasons.
-        write!(f, "m")?;
-
-        Ok(())
+        // SAFETY: We’ve only ever written bytes <128 so everything written is
+        // ASCII and thus valid UTF-8.
+        unsafe { str::from_utf8_unchecked(&self.0[..idx]) }
     }
 
-    /// Write any bytes that go *after* a piece of text to the given writer.
-    fn write_suffix<W: AnyWrite + ?Sized>(&self, f: &mut W) -> Result<(), W::Error> {
-        if self.is_plain() {
-            Ok(())
+    /// Writes colour code at given position in the buffer.  Ends the sequence
+    /// with a semicolon.  Returns index past the last written byte.
+    ///
+    /// May write up to 17 bytes.
+    fn write_colour_category(
+        &mut self,
+        idx: usize,
+        typ: u8,
+        category: ColourCategory,
+    ) -> usize {
+        use std::io::Write;
+
+        self.0[idx] = typ;
+        match category {
+            ColourCategory::Simple(digit) => {
+                self.0[idx + 1] = digit;
+                self.0[idx + 2] = b';';
+                idx + 3
+            },
+            ColourCategory::Fixed(num) => {
+                self.0.len() - {
+                    let mut wr = &mut self.0[idx+1..];
+                    write!(wr, "8;5;{};", num).unwrap();
+                    wr.len()
+                }
+            }
+            ColourCategory::RGB(r, g, b) => {
+                self.0.len() - {
+                    let mut wr = &mut self.0[idx+1..];
+                    write!(wr, "8;2;{};{};{};", r, g, b).unwrap();
+                    wr.len()
+                }
+            }
         }
-        else {
-            write!(f, "{}", RESET)
+    }
+}
+
+impl Style {
+    /// Returns any bytes that go *after* a piece of text.
+    pub(super) fn suffix_str(&self) -> &'static str {
+        if self.is_plain() {
+            ""
+        } else {
+            RESET
         }
     }
 }
@@ -78,35 +139,19 @@ impl Style {
 pub static RESET: &str = "\x1B[0m";
 
 
-
 impl Colour {
-    fn write_foreground_code<W: AnyWrite + ?Sized>(&self, f: &mut W) -> Result<(), W::Error> {
+    fn colour_category(&self) -> ColourCategory {
         match *self {
-            Colour::Black      => write!(f, "30"),
-            Colour::Red        => write!(f, "31"),
-            Colour::Green      => write!(f, "32"),
-            Colour::Yellow     => write!(f, "33"),
-            Colour::Blue       => write!(f, "34"),
-            Colour::Purple     => write!(f, "35"),
-            Colour::Cyan       => write!(f, "36"),
-            Colour::White      => write!(f, "37"),
-            Colour::Fixed(num) => write!(f, "38;5;{}", &num),
-            Colour::RGB(r,g,b) => write!(f, "38;2;{};{};{}", &r, &g, &b),
-        }
-    }
-
-    fn write_background_code<W: AnyWrite + ?Sized>(&self, f: &mut W) -> Result<(), W::Error> {
-        match *self {
-            Colour::Black      => write!(f, "40"),
-            Colour::Red        => write!(f, "41"),
-            Colour::Green      => write!(f, "42"),
-            Colour::Yellow     => write!(f, "43"),
-            Colour::Blue       => write!(f, "44"),
-            Colour::Purple     => write!(f, "45"),
-            Colour::Cyan       => write!(f, "46"),
-            Colour::White      => write!(f, "47"),
-            Colour::Fixed(num) => write!(f, "48;5;{}", &num),
-            Colour::RGB(r,g,b) => write!(f, "48;2;{};{};{}", &r, &g, &b),
+            Colour::Black      => ColourCategory::Simple(b'0'),
+            Colour::Red        => ColourCategory::Simple(b'1'),
+            Colour::Green      => ColourCategory::Simple(b'2'),
+            Colour::Yellow     => ColourCategory::Simple(b'3'),
+            Colour::Blue       => ColourCategory::Simple(b'4'),
+            Colour::Purple     => ColourCategory::Simple(b'5'),
+            Colour::Cyan       => ColourCategory::Simple(b'6'),
+            Colour::White      => ColourCategory::Simple(b'7'),
+            Colour::Fixed(num) => ColourCategory::Fixed(num),
+            Colour::RGB(r,g,b) => ColourCategory::RGB(r, g, b),
         }
     }
 }
@@ -276,8 +321,7 @@ impl Colour {
 
 impl fmt::Display for Prefix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let f: &mut fmt::Write = f;
-        self.0.write_prefix(f)
+        f.write_str(PrefixBuffer::default().write(&self.0))
     }
 }
 
@@ -285,28 +329,20 @@ impl fmt::Display for Prefix {
 impl fmt::Display for Infix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use difference::Difference;
-
-        match Difference::between(&self.0, &self.1) {
-            Difference::ExtraStyles(style) => {
-                let f: &mut fmt::Write = f;
-                style.write_prefix(f)
-            },
-            Difference::Reset => {
-                let f: &mut fmt::Write = f;
-                write!(f, "{}{}", RESET, self.1.prefix())
-            },
-            Difference::NoDifference => {
-                Ok(())   // nothing to write
-            },
-        }
+        let mut buf = PrefixBuffer::default();
+        let prefix = match Difference::between(&self.0, &self.1) {
+            Difference::ExtraStyles(style) => buf.write(&style),
+            Difference::Reset => buf.write_with_reset(&self.1),
+            Difference::NoDifference => return Ok(()),
+        };
+        f.write_str(prefix)
     }
 }
 
 
 impl fmt::Display for Suffix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let f: &mut fmt::Write = f;
-        self.0.write_suffix(f)
+        f.write_str(self.0.suffix_str())
     }
 }
 
@@ -366,7 +402,7 @@ mod test {
     #[test]
     fn test_infix() {
         assert_eq!(Style::new().dimmed().infix(Style::new()).to_string(), "\x1B[0m");
-        assert_eq!(White.dimmed().infix(White.normal()).to_string(), "\x1B[0m\x1B[37m");
+        assert_eq!(White.dimmed().infix(White.normal()).to_string(), "\x1B[0;37m");
         assert_eq!(White.normal().infix(White.bold()).to_string(), "\x1B[1m");
         assert_eq!(White.normal().infix(Blue.normal()).to_string(), "\x1B[34m");
         assert_eq!(Blue.bold().infix(Blue.bold()).to_string(), "");
