@@ -21,9 +21,9 @@ version = "1.0.90"
 features = ["derive"]
 optional = true
 
-[target.'cfg(target_os="windows")'.dependencies.winapi]
-version = "0.3.4"
-features = ["consoleapi", "errhandlingapi", "fileapi", "handleapi", "processenv"]
+[target.'cfg(target_os="windows")'.dependencies.windows-sys]
+version = "0.59"
+features = ["Win32_System_Console", "Win32_Storage_FileSystem", "Win32_Security"]
 
 [dev-dependencies]
 doc-comment = "0.3"

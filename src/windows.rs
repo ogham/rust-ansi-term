@@ -14,11 +14,9 @@ pub fn enable_ansi_support() -> Result<(), u32> {
     use std::iter::once;
     use std::os::windows::ffi::OsStrExt;
     use std::ptr::null_mut;
-    use winapi::um::consoleapi::{GetConsoleMode, SetConsoleMode};
-    use winapi::um::errhandlingapi::GetLastError;
-    use winapi::um::fileapi::{CreateFileW, OPEN_EXISTING};
-    use winapi::um::handleapi::INVALID_HANDLE_VALUE;
-    use winapi::um::winnt::{FILE_SHARE_WRITE, GENERIC_READ, GENERIC_WRITE};
+    use windows_sys::Win32::System::Console::{GetConsoleMode, SetConsoleMode};
+    use windows_sys::Win32::Foundation::{GetLastError, INVALID_HANDLE_VALUE, GENERIC_READ, GENERIC_WRITE};
+    use windows_sys::Win32::Storage::FileSystem::{CreateFileW, OPEN_EXISTING, FILE_SHARE_WRITE};
 
     const ENABLE_VIRTUAL_TERMINAL_PROCESSING: u32 = 0x0004;
 

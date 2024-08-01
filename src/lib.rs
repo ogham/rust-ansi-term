@@ -239,7 +239,7 @@
 #![warn(unused_extern_crates, unused_qualifications)]
 
 #[cfg(target_os="windows")]
-extern crate winapi;
+extern crate windows_sys;
 #[cfg(test)]
 #[macro_use]
 extern crate doc_comment;
